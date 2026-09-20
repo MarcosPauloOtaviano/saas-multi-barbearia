@@ -1,0 +1,2 @@
+-- Intentionally empty. Development UI data lives in the isolated demo adapter.
+-- Add only synthetic, non-personal fixtures here when a local Supabase stack is available.
