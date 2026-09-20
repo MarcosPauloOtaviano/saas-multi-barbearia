@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { CalendarClock, Camera, CheckCircle2, Clock3, LockKeyhole, MailCheck, MoreHorizontal, Plus, ShieldCheck, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { BarberAvatar } from "@/components/barber-avatar";
-import { useDemo } from "@/components/demo-provider";
+import { useAppData } from "@/components/app-data-provider";
 import type { MemberRole } from "@/lib/types";
 
 const roleLabels: Record<MemberRole, string> = {
@@ -15,7 +15,7 @@ const roleLabels: Record<MemberRole, string> = {
 };
 
 export function TeamView() {
-  const { barbers, teamMembers, inviteTeamMember, updateBarberAvatar, canManage, role } = useDemo();
+  const { barbers, teamMembers, inviteTeamMember, updateBarberAvatar, canManage, role } = useAppData();
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);

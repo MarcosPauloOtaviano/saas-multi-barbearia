@@ -4,9 +4,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronRight, Clock3, Scissors, ShieldCheck, UserRound } from "lucide-react";
 import { BarberAvatar } from "@/components/barber-avatar";
-import { useDemo } from "@/components/demo-provider";
+import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
-import { findAvailableBarbers } from "@/lib/scheduling";
 import { hasSupabaseEnv, supabasePublishableKey, supabaseUrl } from "@/lib/supabase/config";
 import type { Barber, Service } from "@/lib/types";
 
@@ -14,7 +13,6 @@ type PublicBarber = Barber & { serviceIds?: string[] };
 type AvailableTime = { label: string; iso: string; barberId: string; barberName: string };
 type AvailableTimeGroup = { label: string; iso: string; barbers: { id: string; name: string }[] };
 
-const times = ["09:00", "10:20", "11:30", "13:30", "14:40", "15:00", "16:30", "17:20"];
 const bookingDates = Array.from({ length: 7 }, (_, offset) => {
   const date = new Date(Date.now() + offset * 86_400_000);
   return {
@@ -25,7 +23,7 @@ const bookingDates = Array.from({ length: 7 }, (_, offset) => {
 });
 
 export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; initialServiceId?: string }) {
-  const { services, barbers, customerAppointments, addAppointment } = useDemo();
+  const { services, barbers } = useAppData();
   const [step, setStep] = useState(1);
   const [serviceId, setServiceId] = useState(initialServiceId);
   const [barberId, setBarberId] = useState("");
@@ -75,16 +73,10 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
     }
 
     if (!hasSupabaseEnv || !supabaseUrl || !supabasePublishableKey) {
-      const candidates = barberId === "any" ? eligibleBarbers : eligibleBarbers.filter((barber) => barber.id === barberId);
-      const nextTimes = times.flatMap((label) => {
-        const available = findAvailableBarbers(customerAppointments, candidates, {
-          date: selectedDate,
-          time: label,
-          durationMinutes: selectedService.durationMinutes,
-        });
-        return available.map((barber) => ({ label, iso: `${selectedDate}T${label}:00-03:00`, barberId: barber.id, barberName: barber.name }));
+      queueMicrotask(() => {
+        setAvailableTimes([]);
+        setBookingError("O agendamento online está sendo conectado ao ambiente de produção.");
       });
-      queueMicrotask(() => setAvailableTimes(nextTimes));
       return;
     }
 
@@ -96,7 +88,7 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
       .catch((error) => { if (error.name !== "AbortError") setBookingError("Não foi possível carregar os horários disponíveis."); })
       .finally(() => { if (!controller.signal.aborted) setAvailabilityLoading(false); });
     return () => controller.abort();
-  }, [slug, serviceId, barberId, selectedDate, selectedService, eligibleBarbers, customerAppointments, shop.timezone]);
+  }, [slug, serviceId, barberId, selectedDate, selectedService, shop.timezone]);
 
   async function finish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -111,9 +103,9 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
       setStep(5);
       return;
     }
-    const result = await addAppointment({ clientId: crypto.randomUUID(), clientName: customer.name, barberId: selectedBarber.id, barberName: selectedBarber.name, serviceId: selectedService.id, serviceName: selectedService.name, date: selectedDate, time, durationMinutes: selectedService.durationMinutes, priceCents: selectedService.priceCents });
     setSubmitting(false);
-    if (result.ok) setStep(5); else { requestId.current = null; setBookingError(result.message); }
+    requestId.current = null;
+    setBookingError("O agendamento online está sendo conectado ao ambiente de produção.");
   }
 
   return <main className="booking-page">
@@ -122,7 +114,7 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
     {step <= 4 && <div className="booking-progress" aria-label={`Etapa ${step} de 4`}>{[1,2,3,4].map((item) => <span className={item <= step ? "is-active" : ""} key={item}><i>{item < step ? <Check size={13} /> : item}</i><small>{["Serviço","Profissional","Horário","Seus dados"][item-1]}</small></span>)}</div>}
     <section className="booking-card">
       {bookingError && <p className="form-feedback error">{bookingError}</p>}
-      {step === 1 && <div className="booking-step"><div className="booking-step__head"><div><p className="eyebrow">Etapa 1</p><h2>Qual serviço você quer?</h2></div></div><div className="booking-options">{publicServices.filter((service) => service.active).map((service) => <button className={serviceId === service.id ? "is-selected" : ""} onClick={() => { setServiceId(service.id); setBarberId(""); setAssignedBarberId(""); setTime(""); setSlotIso(""); setBookingError(""); }} key={service.id}><span className="booking-option-icon"><Scissors /></span><span><strong>{service.name}</strong><small><Clock3 /> {service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b>{serviceId === service.id && <i><Check /></i>}</button>)}</div><button className="button primary booking-next" disabled={!serviceId} onClick={() => setStep(2)}>Continuar <ChevronRight /></button></div>}
+      {step === 1 && <div className="booking-step"><div className="booking-step__head"><div><p className="eyebrow">Etapa 1</p><h2>Qual serviço você quer?</h2></div></div><div className="booking-options">{publicServices.filter((service) => service.active).map((service) => <button className={serviceId === service.id ? "is-selected" : ""} onClick={() => { setServiceId(service.id); setBarberId(""); setAssignedBarberId(""); setTime(""); setSlotIso(""); setBookingError(""); }} key={service.id}><span className="booking-option-icon"><Scissors /></span><span><strong>{service.name}</strong><small><Clock3 /> {service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b>{serviceId === service.id && <i><Check /></i>}</button>)}</div>{publicServices.length === 0 && <p className="booking-step-note">Os serviços serão publicados em breve. Volte novamente quando a agenda estiver aberta.</p>}<button className="button primary booking-next" disabled={!serviceId} onClick={() => setStep(2)}>Continuar <ChevronRight /></button></div>}
       {step === 2 && <div className="booking-step"><button className="booking-back" onClick={() => setStep(1)}><ArrowLeft /> Voltar</button><div className="booking-step__head"><div><p className="eyebrow">Etapa 2</p><h2>Com quem você prefere?</h2></div></div><div className="barber-options"><button className={barberId === "any" ? "is-selected" : ""} onClick={() => { setBarberId("any"); setAssignedBarberId(""); setTime(""); setSlotIso(""); }}><span className="public-avatar any"><UserRound /></span><span><strong>Escolher pelo horário</strong><small>Depois escolha entre todos que estiverem livres</small></span></button>{eligibleBarbers.map((barber) => <button className={barberId === barber.id ? "is-selected" : ""} onClick={() => { setBarberId(barber.id); setAssignedBarberId(barber.id); setTime(""); setSlotIso(""); }} key={barber.id}><BarberAvatar barber={barber} className="public-avatar" sizes="42px" /><span><strong>{barber.name}</strong><small>{barber.role}</small></span></button>)}</div><button className="button primary booking-next" disabled={!barberId} onClick={() => setStep(3)}>Continuar <ChevronRight /></button></div>}
       {step === 3 && <div className="booking-step"><button className="booking-back" onClick={() => setStep(2)}><ArrowLeft /> Voltar</button><div className="booking-step__head"><div><p className="eyebrow">Etapa 3</p><h2>Escolha data e horário</h2>{barberId === "any" && <p className="booking-step-note">Escolha um horário e mostraremos todos os profissionais livres nele.</p>}</div></div><div className="date-options">{bookingDates.map((day) => <button className={selectedDate === day.iso ? "is-selected" : ""} onClick={() => { setSelectedDate(day.iso); setTime(""); setSlotIso(""); setAssignedBarberId(barberId !== "any" ? barberId : ""); }} key={day.iso}><small>{day.weekday}</small><strong>{day.day}</strong></button>)}</div><p className="time-section-title"><Clock3 /> Horários disponíveis</p>{availabilityLoading ? <p className="booking-step-note">Consultando a agenda da equipe…</p> : timeGroups.length ? <div className="time-options">{timeGroups.map((group) => <button aria-label={`${group.label}, ${group.barbers.length} ${group.barbers.length === 1 ? "profissional livre" : "profissionais livres"}`} className={slotIso === group.iso ? "is-selected" : ""} onClick={() => { setTime(group.label); setSlotIso(group.iso); setAssignedBarberId(barberId !== "any" ? barberId : group.barbers.length === 1 ? group.barbers[0].id : ""); setBookingError(""); }} key={group.iso}><strong>{group.label}</strong>{barberId === "any" && <small>{group.barbers.length} {group.barbers.length === 1 ? "profissional" : "profissionais"}</small>}</button>)}</div> : <p className="booking-step-note">Não há horários livres nesta data. Escolha outro dia ou profissional.</p>}{barberId === "any" && selectedTimeGroup && <section className="slot-barber-picker" aria-labelledby="slot-barber-title"><div><p className="eyebrow">Disponíveis às {selectedTimeGroup.label}</p><h3 id="slot-barber-title">Com quem você quer cortar?</h3></div><div>{selectedTimeGroup.barbers.map((candidate) => { const barber = publicBarbers.find((item) => item.id === candidate.id); if (!barber) return null; return <button className={assignedBarberId === barber.id ? "is-selected" : ""} onClick={() => setAssignedBarberId(barber.id)} key={barber.id}><BarberAvatar barber={barber} className="public-avatar" sizes="42px" /><span><strong>{barber.name}</strong><small>{assignedBarberId === barber.id ? "Selecionado" : "Livre neste horário"}</small></span>{assignedBarberId === barber.id && <CheckCircle2 />}</button>; })}</div></section>}{barberId === "any" && time && selectedBarber && <p className="booking-step-note"><CheckCircle2 size={16} /> Você escolheu {selectedBarber.name} para {time}.</p>}<button className="button primary booking-next" disabled={!time || !assignedBarberId} onClick={() => setStep(4)}>Continuar <ChevronRight /></button></div>}
       {step === 4 && <form className="booking-step" onSubmit={finish}><button type="button" className="booking-back" onClick={() => setStep(3)}><ArrowLeft /> Voltar</button><div className="booking-step__head"><div><p className="eyebrow">Etapa 4</p><h2>Confirme seus dados</h2><p className="booking-step-note">Só agora pedimos o necessário para enviar a confirmação e evitar reservas duplicadas.</p></div></div><div className="booking-summary"><div><Scissors /><span><small>Serviço</small><strong>{selectedService?.name}</strong></span></div><div><UserRound /><span><small>Profissional</small><strong>{selectedBarber?.name}</strong></span></div><div><CalendarDays /><span><small>Quando</small><strong>{new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${selectedDate}T12:00:00Z`))} · {time}</strong></span></div><b>{formatCurrency(selectedService?.priceCents ?? 0)}</b></div><div className="form-grid"><label className="field full"><span>Nome completo</span><input required minLength={2} autoComplete="name" value={customer.name} onChange={(e) => setCustomer({...customer,name:e.target.value})} /></label><label className="field"><span>E-mail para confirmação</span><input type="email" required autoComplete="email" value={customer.email} onChange={(e) => setCustomer({...customer,email:e.target.value})} /></label><label className="field"><span>WhatsApp (opcional)</span><input type="tel" autoComplete="tel" value={customer.phone} onChange={(e) => setCustomer({...customer,phone:e.target.value})} /></label></div><p className="booking-privacy"><ShieldCheck /> Usaremos os dados somente para este atendimento e lembretes operacionais. Você poderá confirmar ou cancelar pelo link seguro.</p><button className="button primary booking-next" disabled={submitting}>{submitting ? "Protegendo seu horário…" : <>Confirmar agendamento <CheckCircle2 /></>}</button></form>}

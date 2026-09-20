@@ -1,6 +1,5 @@
-import { AppShell } from "@/components/app-shell";
-import { DashboardHome } from "@/components/dashboard-home";
+import { notFound } from "next/navigation";
 
 export default function AdminHomePage() {
-  return <AppShell><DashboardHome /></AppShell>;
+  notFound();
 }

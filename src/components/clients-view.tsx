@@ -3,11 +3,11 @@
 import { FormEvent, useMemo, useState } from "react";
 import { ChevronRight, Mail, MessageCircle, Plus, Search, Sparkles, UserRoundPlus, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
-import { useDemo } from "@/components/demo-provider";
+import { useAppData } from "@/components/app-data-provider";
 import { initials } from "@/lib/format";
 
 export function ClientsView() {
-  const { clients, addClient } = useDemo();
+  const { clients, addClient } = useAppData();
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const filtered = useMemo(() => clients.filter((client) => `${client.name} ${client.phone} ${client.email}`.toLowerCase().includes(query.toLowerCase())), [clients, query]);

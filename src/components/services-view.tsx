@@ -3,11 +3,11 @@
 import { FormEvent, useState } from "react";
 import { Clock3, MoreHorizontal, Plus, Scissors, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
-import { useDemo } from "@/components/demo-provider";
+import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
 
 export function ServicesView() {
-  const { services, toggleService, addService } = useDemo();
+  const { services, toggleService, addService } = useAppData();
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
 

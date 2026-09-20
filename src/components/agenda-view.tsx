@@ -4,8 +4,9 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, Plus, Scissors, UserRound, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
-import { useDemo } from "@/components/demo-provider";
+import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
+import { useAdminBase } from "@/lib/admin-route";
 import type { AppointmentStatus } from "@/lib/types";
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -16,7 +17,8 @@ const statusLabels: Record<AppointmentStatus, string> = {
 export function AgendaView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { appointments, clients, services, barbers, addAppointment, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId } = useDemo();
+  const base = useAdminBase();
+  const { appointments, clients, services, barbers, addAppointment, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId } = useAppData();
   const [view, setView] = useState<"day" | "week">("day");
   const [barberFilter, setBarberFilter] = useState(currentBarberId ?? "all");
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
@@ -30,7 +32,7 @@ export function AgendaView() {
     .filter((item) => item.date === todayIso && (barberFilter === "all" || item.barberId === barberFilter))
     .sort((a, b) => a.time.localeCompare(b.time)), [appointments, barberFilter, todayIso]);
 
-  function closeDetail() { router.push("/agenda"); }
+  function closeDetail() { router.push(`${base}/agenda`); }
 
   async function submitAppointment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,7 +51,7 @@ export function AgendaView() {
     setFeedback(result);
     if (result.ok) {
       event.currentTarget.reset();
-      window.setTimeout(() => { setModalOpen(false); setFeedback(null); router.push("/agenda"); }, 900);
+      window.setTimeout(() => { setModalOpen(false); setFeedback(null); router.push(`${base}/agenda`); }, 900);
     }
   }
 
@@ -79,7 +81,7 @@ export function AgendaView() {
           <div className="agenda-board__header"><span>{today.length} agendamentos</span><span><i className="legend-dot confirmed" /> Confirmado <i className="legend-dot pending" /> Aguardando</span></div>
           <div className="timeline">
             {today.map((item) => (
-              <button className={`timeline-card status-${item.status}`} onClick={() => router.push(`/agenda?appointment=${item.id}`)} key={item.id}>
+              <button className={`timeline-card status-${item.status}`} onClick={() => router.push(`${base}/agenda?appointment=${item.id}`)} key={item.id}>
                 <time>{item.time}</time>
                 <span className="barber-stripe" style={{ background: barbers.find((barber) => barber.id === item.barberId)?.color }} />
                 <span className="timeline-copy"><strong>{item.clientName}</strong><small><Scissors size={13} /> {item.serviceName} · {item.durationMinutes} min</small><small><UserRound size={13} /> {item.barberName}</small></span>

@@ -6,7 +6,7 @@ PWA mobile-first para clientes agendarem, acompanharem horários e voltarem à b
 
 - início voltado ao cliente com próximo horário, repetição de serviço, sugestão de retorno, equipe e atalhos;
 - área do cliente para horários, serviços, perfil e privacidade;
-- painel da barbearia separado em `/admin`, com próximo cliente e alertas acionáveis;
+- painel de cada barbearia separado por slug, como `/admin/stilo-sampa`, com próximo cliente e alertas acionáveis;
 - agenda diária/semanal com criação, encaixe, remarcação, confirmação, conclusão e cancelamento;
 - bloqueio de dupla reserva no PostgreSQL;
 - cadastro e inteligência de retorno de clientes;
@@ -20,7 +20,7 @@ PWA mobile-first para clientes agendarem, acompanharem horários e voltarem à b
 - Supabase Auth SSR, RLS multi-tenant e testes pgTAP de isolamento;
 - controles de retenção e solicitações LGPD.
 
-O sistema abre em modo demonstração quando as variáveis Supabase não estão configuradas. Esse modo é apropriado para validar interface e fluxos; produção usa as tabelas, políticas e Edge Functions presentes em `supabase/`.
+Sem as variáveis do Supabase, o sistema não simula gravações nem exibe dados fictícios. A área da equipe permanece bloqueada até a conexão de produção estar configurada.
 
 ## Executar localmente
 
@@ -31,7 +31,7 @@ pnpm install
 pnpm dev
 ```
 
-Acesse `http://localhost:3000` para a experiência do cliente. O painel operacional fica em `http://localhost:3000/admin` e o fluxo de reserva em `http://localhost:3000/b/stilo-sampa`.
+Acesse `http://localhost:3000` para a experiência do cliente. O painel da Stilo Sampa fica em `http://localhost:3000/admin/stilo-sampa` e o fluxo de reserva em `http://localhost:3000/b/stilo-sampa`.
 
 O cliente agenda sem conta obrigatória. A equipe usa contas individuais convidadas por e-mail, com permissões por função e isolamento de agenda para barbeiros. A auditoria completa está em [`docs/ROLE_AND_BOOKING_AUDIT.md`](docs/ROLE_AND_BOOKING_AUDIT.md).
 
@@ -44,6 +44,19 @@ O cliente agenda sem conta obrigatória. A equipe usa contas individuais convida
 5. Configure `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL` e `IP_HASH_SALT` como secrets das Edge Functions.
 6. Publique `process-reminders`, `public-booking` e `appointment-response`.
 7. Agende `process-reminders` com Supabase Cron.
+
+Depois de aplicar as migrations, vincule as credenciais reais de Mantena uma única vez, somente em um terminal seguro:
+
+```bash
+SUPABASE_URL=... \
+SUPABASE_SERVICE_ROLE_KEY=... \
+STILO_ADMIN_EMAIL=... \
+STILO_ADMIN_PASSWORD=... \
+CONFIRM_PRODUCTION_RESET=STILO_SAMPA \
+pnpm bootstrap:stilo-owner
+```
+
+O cadastro público está fechado. Novos profissionais entram somente por convite do proprietário, e cada login é validado contra o slug do estabelecimento.
 
 A chave `service_role` nunca deve existir em variável `NEXT_PUBLIC_*`.
 

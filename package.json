@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bootstrap:stilo-owner": "node scripts/bootstrap-stilo-owner.mjs",
     "check": "pnpm typecheck && pnpm test && pnpm lint && pnpm build"
   },
   "dependencies": {

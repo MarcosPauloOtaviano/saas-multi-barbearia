@@ -2,18 +2,18 @@
 
 ## Limites do sistema
 
-- A raiz do produto é a experiência pública do cliente; a operação interna fica isolada na área `/admin` e nas rotas protegidas de gestão.
+- A raiz do produto é a experiência pública do cliente; a operação interna fica isolada em `/admin/[slug]` e nas rotas protegidas de gestão.
 - O cliente não precisa criar senha: cada agendamento pode ser confirmado ou cancelado pelo link seguro enviado ao e-mail.
 - O navegador apresenta a interface, mas não decide autorização, disponibilidade, preço ou transições críticas.
 - O PostgreSQL é a última barreira para isolamento e conflito de horários.
 - Edge Functions concentram operações públicas e integrações que exigem chave privilegiada.
-- O modo demonstração serve para avaliação visual local. Ele não substitui Supabase, concorrência real ou testes remotos.
+- Sem conexão com o Supabase, a aplicação permanece vazia e bloqueia operações; nunca simula persistência de produção.
 
 ## Multi-tenant
 
 `barbershop_id` existe em todas as entidades operacionais. `memberships` relaciona usuário, tenant, papel e estado. As políticas consultam associação ativa diretamente no banco; `user_metadata` não participa da autorização.
 
-Cada barbearia possui um slug público próprio em `/b/[slug]`. Nome, mensagem, catálogo, profissionais, serviços habilitados e disponibilidade são resolvidos pelo tenant encontrado a partir desse slug; o cabeçalho nunca envia o visitante para a página de outra barbearia. Exemplos: `/b/stilo-sampa` e `/b/salao-dos-cobras`.
+Cada barbearia possui um slug público próprio em `/b/[slug]` e um painel próprio em `/admin/[slug]`. Nome, mensagem, catálogo, profissionais, serviços habilitados e disponibilidade são resolvidos pelo tenant encontrado a partir desse slug. O login exige uma associação ativa no mesmo tenant; credenciais de outra barbearia não autorizam acesso cruzado.
 
 Funções auxiliares ficam no schema `private`, usam `search_path` vazio e têm execução revogada de `PUBLIC`. Funções públicas com `SECURITY DEFINER` são concedidas somente ao papel necessário.
 

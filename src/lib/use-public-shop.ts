@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDemo } from "@/components/demo-provider";
+import { useAppData } from "@/components/app-data-provider";
 import { hasSupabaseEnv, supabasePublishableKey, supabaseUrl } from "@/lib/supabase/config";
 import type { Barber, Service } from "@/lib/types";
 
 export function usePublicShop(slug = "stilo-sampa") {
-  const demo = useDemo();
-  const [services, setServices] = useState<Service[]>(hasSupabaseEnv ? [] : demo.services);
-  const [barbers, setBarbers] = useState<Barber[]>(hasSupabaseEnv ? [] : demo.barbers);
+  const initialData = useAppData();
+  const [services, setServices] = useState<Service[]>(hasSupabaseEnv ? [] : initialData.services);
+  const [barbers, setBarbers] = useState<Barber[]>(hasSupabaseEnv ? [] : initialData.barbers);
   const [loading, setLoading] = useState(hasSupabaseEnv);
 
   useEffect(() => {

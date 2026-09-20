@@ -1,2 +1,2 @@
--- Intentionally empty. Development UI data lives in the isolated demo adapter.
--- Add only synthetic, non-personal fixtures here when a local Supabase stack is available.
+-- Intentionally empty. The production baseline is created by migrations.
+-- Do not add customers, appointments, credentials, or sample business data here.

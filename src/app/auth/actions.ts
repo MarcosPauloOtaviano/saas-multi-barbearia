@@ -7,39 +7,42 @@ import { hasSupabaseEnv } from "@/lib/supabase/config";
 export type AuthState = { error?: string; success?: string };
 
 export async function signIn(_: AuthState, formData: FormData): Promise<AuthState> {
-  if (!hasSupabaseEnv) { redirect("/admin"); }
+  if (!hasSupabaseEnv) return { error: "O ambiente de produção ainda não está conectado ao banco." };
+  const tenantSlug = String(formData.get("tenantSlug") ?? "").trim().toLowerCase();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantSlug)) return { error: "Estabelecimento inválido." };
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "E-mail ou senha inválidos." };
-  redirect("/admin");
+  const { data: membership } = await supabase
+    .from("memberships")
+    .select("id,barbershops!inner(slug)")
+    .eq("user_id", data.user.id)
+    .eq("status", "active")
+    .eq("barbershops.slug", tenantSlug)
+    .maybeSingle();
+  if (!membership) {
+    await supabase.auth.signOut();
+    return { error: "Acesso não autorizado para este estabelecimento." };
+  }
+  redirect(`/admin/${tenantSlug}`);
 }
 
 export async function sendReset(_: AuthState, formData: FormData): Promise<AuthState> {
-  if (!hasSupabaseEnv) return { success: "Modo demonstração: nenhum e-mail foi enviado." };
+  if (!hasSupabaseEnv) return { error: "O ambiente de produção ainda não está conectado ao banco." };
+  const tenantSlug = String(formData.get("tenantSlug") ?? "").trim().toLowerCase();
   const email = String(formData.get("email") ?? "").trim();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantSlug)) return { error: "Estabelecimento inválido." };
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/auth/callback?next=/admin/${tenantSlug}/entrar` });
   if (error) return { error: "Não foi possível enviar o e-mail agora." };
   return { success: "Se o endereço estiver cadastrado, você receberá as instruções." };
 }
 
-export async function signUp(_: AuthState, formData: FormData): Promise<AuthState> {
-  if (!hasSupabaseEnv) redirect("/onboarding");
-  const fullName = String(formData.get("fullName") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  if (fullName.length < 2 || password.length < 8) return { error: "Informe seu nome e uma senha com pelo menos 8 caracteres." };
-  const supabase = await createClient();
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: `${appUrl}/auth/callback?next=/onboarding` } });
-  if (error) return { error: "Não foi possível criar a conta. Verifique os dados informados." };
-  if (data.session) redirect("/onboarding");
-  return { success: "Confira seu e-mail para confirmar a conta e continuar." };
-}
-
-export async function signOut() {
+export async function signOut(tenantSlug = "stilo-sampa") {
   if (hasSupabaseEnv) { const supabase = await createClient(); await supabase.auth.signOut(); }
-  redirect("/login");
+  const safeSlug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantSlug) ? tenantSlug : "stilo-sampa";
+  redirect(`/admin/${safeSlug}/entrar`);
 }

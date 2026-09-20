@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { DemoProvider } from "@/components/demo-provider";
+import { AppDataProvider } from "@/components/app-data-provider";
 import { PwaRegistration } from "@/components/pwa-registration";
 import "./globals.css";
 
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><DemoProvider><PwaRegistration />{children}</DemoProvider></body>
+      <body className="min-h-full flex flex-col"><AppDataProvider><PwaRegistration />{children}</AppDataProvider></body>
     </html>
   );
 }
