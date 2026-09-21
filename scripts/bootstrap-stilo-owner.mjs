@@ -5,8 +5,8 @@ const missing = required.filter((name) => !process.env[name]);
 if (missing.length) {
   throw new Error(`Variáveis ausentes: ${missing.join(", ")}`);
 }
-if (process.env.STILO_ADMIN_PASSWORD.length < 12) {
-  throw new Error("STILO_ADMIN_PASSWORD deve ter pelo menos 12 caracteres.");
+if (process.env.STILO_ADMIN_PASSWORD.length < 8) {
+  throw new Error("STILO_ADMIN_PASSWORD deve ter pelo menos 8 caracteres.");
 }
 if (process.env.CONFIRM_PRODUCTION_RESET !== "STILO_SAMPA") {
   throw new Error("Defina CONFIRM_PRODUCTION_RESET=STILO_SAMPA para confirmar a limpeza definitiva.");
