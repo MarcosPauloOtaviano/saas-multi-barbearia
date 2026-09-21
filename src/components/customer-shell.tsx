@@ -14,7 +14,7 @@ const navigation = [
 export function CustomerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return <main className="customer-app">
-    <header className="customer-header">
+    <header className={`customer-header ${pathname === "/" ? "customer-header--home" : ""}`}>
       <Link className="customer-brand" href="/"><span><Scissors /></span><div><strong>Barbearia Stilo Sampa</strong><small>Agendamento oficial</small></div></Link>
       <Link className="customer-avatar" href="/cliente/perfil" aria-label="Privacidade e proteção de dados"><UserRound size={18} /></Link>
     </header>

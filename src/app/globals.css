@@ -572,3 +572,54 @@ a { color: inherit; }
   .story-screen__hero strong { font-size: clamp(2rem, 13vw, 3.6rem); }
   .customer-story__scroll-cue { margin-top: 1px; }
 }
+
+/* Abertura pública em tela cheia: a história visual ocupa a cena e a agenda fica na barra inferior. */
+.customer-home { display: block; }
+.customer-header--home { position: fixed; z-index: 50; top: 0; left: 50%; width: min(100%, 1280px); transform: translateX(-50%); color: white; background: linear-gradient(180deg, rgb(8 24 21 / .84), transparent); }
+.customer-header--home .customer-brand > span { color: #fff2e9; background: rgb(200 111 69 / .92); }
+.customer-header--home .customer-brand small { color: rgb(255 255 255 / .62); }
+.customer-header--home .customer-avatar { border-color: rgb(255 255 255 / .24); color: white; background: rgb(255 255 255 / .1); box-shadow: none; }
+.customer-header--home + .customer-content { padding-top: 0; }
+.customer-story { min-height: 300vh; margin: 0 -18px; }
+.customer-story__sticky { top: 0; min-height: 100dvh; padding: clamp(104px, 15vh, 160px) clamp(22px, 7vw, 96px) 108px; overflow: hidden; color: white; background: #0a211d; }
+.customer-story__sticky::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: radial-gradient(circle at 82% 20%, rgb(226 147 101 / .31), transparent 24%), linear-gradient(140deg, rgb(8 30 26 / .94), rgb(8 30 26 / .25) 58%, rgb(7 19 17 / .7)); }
+.customer-story__intro { position: relative; z-index: 10; max-width: 560px; }
+.customer-story__intro .eyebrow { color: #e9b398; }
+.customer-story__intro h2 { max-width: 590px; font-size: clamp(2.2rem, 7vw, 5.7rem); color: white; }
+.customer-story__intro > p:last-child { max-width: 400px; color: rgb(255 255 255 / .68); font-size: .78rem; }
+.customer-story__stage { position: absolute; z-index: 2; inset: 0; display: block; }
+.customer-story__copy { position: absolute; z-index: 10; left: clamp(22px, 7vw, 96px); bottom: clamp(116px, 15vh, 168px); width: min(430px, calc(100% - 44px)); min-height: 0; color: white; }
+.customer-story__step-count { margin-bottom: 18px; color: #f0b18d; }
+.customer-story__scene-copy { inset: auto 0 0; }
+.customer-story__scene-copy > p:not(.eyebrow) { color: rgb(255 255 255 / .7); }
+.customer-story__scene-copy a { color: #f0b18d; }
+.customer-story__icon { color: #15342d; background: #efb18f; }
+.customer-story__viewport { position: absolute; inset: 0; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+.customer-story__browser-bar { top: clamp(86px, 12vh, 124px); right: clamp(22px, 7vw, 96px); left: auto; width: min(220px, calc(100% - 44px)); border: 1px solid rgb(255 255 255 / .2); border-radius: 999px; background: rgb(8 30 26 / .38); }
+.customer-story__screen { inset: 0; border-radius: 0; }
+.story-screen__hero { padding: clamp(130px, 20vh, 220px) clamp(22px, 7vw, 96px) 180px; }
+.story-screen__hero strong { max-width: 720px; font-size: clamp(4rem, 12vw, 10rem); line-height: .78; }
+.story-screen__hero small { font-size: .62rem; }
+.customer-story__scroll-cue { position: absolute; z-index: 10; right: clamp(22px, 7vw, 96px); bottom: 108px; color: rgb(255 255 255 / .64); }
+.customer-story__scroll-cue svg:first-child { color: #efb18f; }
+.customer-story__grain { opacity: .3; }
+.customer-nav { border-color: rgb(255 255 255 / .17); background: rgb(8 30 26 / .9); box-shadow: 0 18px 50px rgb(4 16 14 / .38); }
+.customer-nav > a:not(.customer-book) { color: rgb(255 255 255 / .6); }
+.customer-nav > a.is-active { color: white; }
+.customer-book { color: white; }
+.customer-book > span { border-color: #0a211d; }
+
+@media (min-width: 760px) {
+  .customer-home { display: block; }
+}
+
+@media (max-width: 759px) {
+  .customer-story { min-height: 260vh; margin-inline: -14px; }
+  .customer-story__sticky { padding-inline: 22px; }
+  .customer-story__intro h2 { font-size: clamp(2.15rem, 11vw, 4rem); }
+  .customer-story__copy { left: 22px; width: calc(100% - 44px); }
+  .story-screen__hero { padding: 135px 22px 188px; }
+  .story-screen__hero strong { font-size: clamp(4rem, 18vw, 7rem); }
+  .customer-story__browser-bar { right: 22px; }
+  .customer-story__scroll-cue { right: 22px; bottom: 105px; }
+}

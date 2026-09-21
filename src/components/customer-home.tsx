@@ -13,7 +13,6 @@ export function CustomerHome() {
   const activeBarbers = barbers.filter((barber) => barber.active);
 
   return <div className="customer-home">
-    <section className="customer-welcome"><div><p className="eyebrow">Stilo Sampa · agendamento</p><h1>Seu próximo corte começa aqui.</h1><p>Escolha o serviço, o profissional e o horário que combinam com você.</p></div><Link className="button primary customer-desktop-cta" href="/b/stilo-sampa">Agendar horário <ArrowRight /></Link></section>
     <CustomerScrollStory />
     <Link className="customer-primary-cta" href="/b/stilo-sampa"><span><Scissors /></span><div><strong>Agendar novo horário</strong><small>Veja os horários realmente disponíveis</small></div><ArrowRight /></Link>
 
