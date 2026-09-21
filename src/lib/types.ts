@@ -56,6 +56,15 @@ export type Barber = {
 
 export type MemberRole = "owner" | "manager" | "barber" | "receptionist";
 
+export type WorkingHour = {
+  id?: string;
+  barberId: string;
+  weekday: number;
+  startsAt: string;
+  endsAt: string;
+  active: boolean;
+};
+
 export type TeamMember = {
   id: string;
   userId: string;

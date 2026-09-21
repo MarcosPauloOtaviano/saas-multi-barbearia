@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { initialAppointments, initialBarbers, initialClients, initialNotifications, initialServices, initialTeamMembers } from "@/lib/initial-data";
 import { hasSchedulingConflict } from "@/lib/scheduling";
-import type { AppNotification, Appointment, Barber, Client, MemberRole, Service, TeamMember } from "@/lib/types";
+import type { AppNotification, Appointment, Barber, Client, MemberRole, Service, TeamMember, WorkingHour } from "@/lib/types";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,6 +12,7 @@ type NewClient = Omit<Client, "id" | "visits" | "lastVisit">;
 type NewService = Omit<Service, "id" | "active">;
 type NewBarber = Pick<Barber, "name" | "color">;
 type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string };
+type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active">;
 
 function barberMediaPath(publicUrl?: string) {
   if (!publicUrl) return null;
@@ -27,6 +28,7 @@ type AppDataContextValue = {
   services: Service[];
   barbers: Barber[];
   teamMembers: TeamMember[];
+  workingHours: WorkingHour[];
   notifications: AppNotification[];
   role: MemberRole;
   currentBarberId: string | null;
@@ -40,6 +42,7 @@ type AppDataContextValue = {
   addService: (service: NewService) => Promise<{ ok: boolean; message: string }>;
   addBarber: (barber: NewBarber) => Promise<{ ok: boolean; message: string }>;
   inviteTeamMember: (member: TeamInvite) => Promise<{ ok: boolean; message: string }>;
+  saveBarberSchedule: (barberId: string, schedule: ScheduleEntry[]) => Promise<{ ok: boolean; message: string }>;
   updateBarberAvatar: (barberId: string, file: File) => Promise<{ ok: boolean; message: string }>;
   toggleService: (id: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
@@ -55,6 +58,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [services, setServices] = useState(initialServices);
   const [barbers, setBarbers] = useState(initialBarbers);
   const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
+  const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [role, setRole] = useState<MemberRole>("owner");
   const [currentUserName, setCurrentUserName] = useState("Mantena");
@@ -89,7 +93,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         setRole(membership.role as MemberRole);
         setShopName(shopRecord?.name ?? "Barbearia");
 
-        const [{ data: profile }, { data: remoteServices }, { data: remoteBarbers }, { data: remoteClients }, { data: remoteAppointments }, { data: remoteNotifications }, { data: remoteMemberships }] = await Promise.all([
+        const [{ data: profile }, { data: remoteServices }, { data: remoteBarbers }, { data: remoteClients }, { data: remoteAppointments }, { data: remoteNotifications }, { data: remoteMemberships }, { data: remoteWorkingHours }] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
           supabase.from("services").select("id,name,description,duration_minutes,price_cents,active").eq("barbershop_id", tenantId).order("name"),
           supabase.from("barbers").select("id,membership_id,display_name,color,avatar_url,active").eq("barbershop_id", tenantId).order("display_name"),
@@ -97,6 +101,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           supabase.from("appointments").select("id,barber_id,client_id,starts_at,ends_at,status,source,clients(name),barbers(display_name),appointment_services(service_id,service_name,duration_minutes,price_cents)").eq("barbershop_id", tenantId).order("starts_at"),
           supabase.from("notifications").select("id,type,title,body,created_at,read_at,action_url").eq("barbershop_id", tenantId).order("created_at", { ascending: false }).limit(50),
           supabase.from("memberships").select("id,user_id,role,status").eq("barbershop_id", tenantId).order("created_at"),
+          supabase.from("working_hours").select("id,barber_id,weekday,starts_at,ends_at,active").eq("barbershop_id", tenantId).order("weekday").order("starts_at"),
         ]);
 
         setCurrentUserName(profile?.full_name ?? user.email?.split("@")[0] ?? "Equipe");
@@ -111,6 +116,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           const barber = (remoteBarbers ?? []).find((candidate) => candidate.membership_id === item.id);
           return { id: item.id, userId: item.user_id, name: remoteProfiles?.find((candidate) => candidate.id === item.user_id)?.full_name ?? barber?.display_name ?? "Pessoa da equipe", email: item.user_id === user.id ? user.email ?? "E-mail protegido" : "E-mail protegido", role: item.role as MemberRole, status: item.status as TeamMember["status"], barberId: barber?.id, color: barber?.color };
         }));
+        setWorkingHours((remoteWorkingHours ?? []).map((item) => ({ id: item.id, barberId: item.barber_id, weekday: item.weekday, startsAt: String(item.starts_at).slice(0, 5), endsAt: String(item.ends_at).slice(0, 5), active: item.active })));
         setClients((remoteClients ?? []).map((item) => ({ id: item.id, name: item.name, phone: item.phone ?? "", email: item.email ?? "", visits: 0, lastVisit: "Sem histórico", notes: item.notes ?? "" })));
         setAppointments((remoteAppointments ?? []).map((item) => {
           const client = Array.isArray(item.clients) ? item.clients[0] : item.clients;
@@ -124,7 +130,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         }));
         setNotifications((remoteNotifications ?? []).map((item) => ({ id: item.id, type: item.type === "appointment_created" ? "booking" : item.type === "appointment_confirmed" ? "confirmation" : item.type === "appointment_cancelled" ? "cancellation" : item.type === "return_opportunity" ? "return" : "upcoming", title: item.title, body: item.body, time: new Date(item.created_at).toLocaleString("pt-BR"), read: Boolean(item.read_at), actionUrl: item.action_url ?? "/notificacoes" })));
       } catch {
-        setAppointments([]); setClients([]); setServices([]); setNotifications([]); setBarbers([]); setTeamMembers([]);
+        setAppointments([]); setClients([]); setServices([]); setNotifications([]); setBarbers([]); setTeamMembers([]); setWorkingHours([]);
       }
     };
     void load();
@@ -138,7 +144,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const visibleNotifications = currentBarberId ? notifications.filter((item) => !item.actionUrl.includes("appointment=") || [...visibleAppointmentIds].some((id) => item.actionUrl.includes(id))) : notifications;
 
   const value = useMemo<AppDataContextValue>(() => ({
-    appointments: visibleAppointments, customerAppointments: appointments, clients: visibleClients, services, barbers, teamMembers, notifications: visibleNotifications,
+    appointments: visibleAppointments, customerAppointments: appointments, clients: visibleClients, services, barbers, teamMembers, workingHours, notifications: visibleNotifications,
     role, currentBarberId, currentUserName, shopName, canManage: role === "owner" || role === "manager",
     addAppointment: async (input) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
@@ -173,8 +179,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
       const supabase = createClient();
       const { data, error } = await supabase.from("services").insert({ barbershop_id: remoteTenantId.current, name: service.name, description: service.description, duration_minutes: service.durationMinutes, price_cents: service.priceCents }).select("id").single();
-      if (error) return { ok: false, message: "Não foi possível cadastrar o serviço." };
-      if (barbers.length) await supabase.from("barber_services").insert(barbers.map((barber) => ({ barbershop_id: remoteTenantId.current, barber_id: barber.id, service_id: data.id })));
+      if (error || !data?.id) return { ok: false, message: error?.code === "42501" ? "Seu perfil não tem permissão para cadastrar serviços." : "Não foi possível cadastrar o serviço." };
+      if (barbers.length) {
+        const { error: assignmentError } = await supabase.from("barber_services").insert(barbers.map((barber) => ({ barbershop_id: remoteTenantId.current, barber_id: barber.id, service_id: data.id })));
+        if (assignmentError) {
+          await supabase.from("services").delete().eq("id", data.id).eq("barbershop_id", remoteTenantId.current);
+          return { ok: false, message: "Não foi possível vincular o serviço aos profissionais." };
+        }
+      }
       setServices((current) => [...current, { ...service, id: data.id, active: true }]);
       return { ok: true, message: "Serviço cadastrado." };
     },
@@ -195,6 +207,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setTeamMembers((current) => [...current, data.member as TeamMember]);
       if (data.member.barberId) setBarbers((current) => [...current, { id: data.member.barberId, name: member.name, role: "Barbeiro", color: member.color, todayCount: 0, workingHours: "Definir horários", active: true }]);
       return { ok: true, message: "Convite enviado. O acesso só será ativado pelo link do e-mail." };
+    },
+    saveBarberSchedule: async (barberId, schedule) => {
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const { error } = await createClient().rpc("save_barber_schedule", {
+        target_barbershop_id: remoteTenantId.current,
+        target_barber_id: barberId,
+        schedule: schedule.map(({ weekday, startsAt, endsAt, active }) => ({ weekday, starts_at: startsAt, ends_at: endsAt, active })),
+      });
+      if (error) return { ok: false, message: error.code === "42501" ? "Seu perfil não pode ajustar horários." : "Não foi possível salvar os horários." };
+      setWorkingHours((current) => [...current.filter((item) => item.barberId !== barberId), ...schedule.map((item) => ({ ...item, barberId }))]);
+      return { ok: true, message: "Horários salvos." };
     },
     updateBarberAvatar: async (barberId, file) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
@@ -231,7 +254,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await createClient().from("notifications").update({ read_at: new Date().toISOString() }).eq("barbershop_id", remoteTenantId.current).is("read_at", null);
       if (!error) setNotifications((current) => current.map((note) => ({ ...note, read: true })));
     },
-  }), [appointments, visibleAppointments, visibleClients, services, barbers, teamMembers, visibleNotifications, role, currentBarberId, currentUserName, shopName]);
+  }), [appointments, visibleAppointments, visibleClients, services, barbers, teamMembers, workingHours, visibleNotifications, role, currentBarberId, currentUserName, shopName]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

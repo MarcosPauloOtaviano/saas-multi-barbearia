@@ -20,7 +20,7 @@ export function AgendaView() {
   const base = useAdminBase();
   const { appointments, clients, services, barbers, addAppointment, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId } = useAppData();
   const [view, setView] = useState<"day" | "week">("day");
-  const [barberFilter, setBarberFilter] = useState(currentBarberId ?? "all");
+  const [barberFilter, setBarberFilter] = useState(searchParams.get("barber") ?? currentBarberId ?? "all");
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
