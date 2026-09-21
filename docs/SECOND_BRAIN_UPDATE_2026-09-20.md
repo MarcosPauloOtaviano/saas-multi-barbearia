@@ -40,3 +40,13 @@ Data: 20 de setembro de 2026
 - A migration de regressão foi executada com fixtures dentro de rollback e validou RLS, atribuição de serviços, folgas, pausa da loja, conflitos de barbeiro/cliente, limite de fechamento e foto própria.
 - A limpeza de produção foi confirmada: 1 estabelecimento, 2 barbeiros (Mantena e Roberto), 1 proprietário ativo, 0 serviços, 0 produtos e 0 agendamentos.
 - Roberto permanece sem login até que Mantena informe o e-mail dele pelo fluxo “Liberar acesso”; o convite passa a vincular o profissional existente sem criar duplicidade.
+
+## Home mobile e acesso inicial da equipe — 21/09/2026
+
+- A home pública troca o scroll-jacking por uma home vertical direta em telas pequenas; desktop mantém o visual editorial. O CTA de agendamento aparece imediatamente e todo o copy permanece em português.
+- O administrador pode inativar/re-ativar barbeiros. Inativos deixam de aparecer para novas reservas e têm o acesso suspenso.
+- Exclusão de perfil inativo é permitida ao proprietário quando não há histórico de agendamentos; com histórico, o sistema preserva o registro inativo para não quebrar relatórios e agenda.
+- O administrador cria login e senha inicial no painel. Nenhuma senha é enviada ao e-mail; a entrega deve ser feita por canal seguro.
+- O primeiro login redireciona para troca obrigatória de senha usando `profiles.must_change_password` e a função protegida `complete_password_setup()`.
+- A migration `20260921152114_staff_password_and_profile_lifecycle.sql` foi aplicada no Supabase conectado e a Edge Function `invite-team-member` foi publicada no projeto de produção.
+- Produção foi limpa novamente: somente Mantena (proprietário/barbeiro) e Roberto (barbeiro sem login) permanecem cadastrados.
