@@ -1,3 +1,3 @@
-import { CustomerAppointments } from "@/components/customer-appointments";
+import { redirect } from "next/navigation";
 
-export default function CustomerAppointmentsPage() { return <CustomerAppointments />; }
+export default function CustomerAppointmentsPage() { redirect("/conta"); }

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Barbearia Stilo Sampa — Agende seu horário",
+  title: "BarberFlow — Agendamento de barbearias",
   description: "Agende seu corte, acompanhe seus horários e cuide do seu estilo pelo celular.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/favicon.svg", apple: "/apple-touch-icon.png" },

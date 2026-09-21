@@ -1,3 +1,3 @@
-import { CustomerProfile } from "@/components/customer-profile";
+import { redirect } from "next/navigation";
 
-export default function CustomerProfilePage() { return <CustomerProfile />; }
+export default function CustomerProfilePage() { redirect("/conta"); }

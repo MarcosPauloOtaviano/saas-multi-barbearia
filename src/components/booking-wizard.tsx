@@ -37,7 +37,7 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const inferredShopName = slug === "stilo-sampa" ? "Barbearia Stilo Sampa" : slug.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
+  const inferredShopName = slug.split("-").filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ") || "Estabelecimento";
   const [shop, setShop] = useState({ name: inferredShopName, bookingMessage: "", timezone: "America/Sao_Paulo" });
   const requestId = useRef<string | null>(null);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });

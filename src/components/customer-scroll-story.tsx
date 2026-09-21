@@ -23,7 +23,7 @@ function sceneStyle(progress: number, index: number): CSSProperties {
   };
 }
 
-export function CustomerScrollStory() {
+export function CustomerScrollStory({ bookingHref }: { bookingHref: string }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0);
 
@@ -63,7 +63,7 @@ export function CustomerScrollStory() {
             <p className="eyebrow">{scene.eyebrow}</p>
             <h3>{scene.title}</h3>
             <p>{scene.body}</p>
-            {index === scenes.length - 1 && <Link href="/b/stilo-sampa">Encontrar meu horário <ArrowRight /></Link>}
+            {index === scenes.length - 1 && <Link href={bookingHref}>Encontrar meu horário <ArrowRight /></Link>}
           </article>; })}
         </div>
         <div className="customer-story__viewport" aria-hidden="true">

@@ -5,26 +5,53 @@ import { useAppData } from "@/components/app-data-provider";
 import { hasSupabaseEnv, supabasePublishableKey, supabaseUrl } from "@/lib/supabase/config";
 import type { Barber, Service } from "@/lib/types";
 
-export function usePublicShop(slug = "stilo-sampa") {
+export type PublicShop = {
+  id: string;
+  name: string;
+  slug: string;
+  timezone: string;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  accentColor?: string | null;
+  bookingMessage?: string | null;
+};
+
+export function usePublicShop(slug?: string) {
   const initialData = useAppData();
+  const isConfigured = Boolean(slug);
+  const [shop, setShop] = useState<PublicShop | null>(null);
   const [services, setServices] = useState<Service[]>(hasSupabaseEnv ? [] : initialData.services);
-  const [barbers, setBarbers] = useState<Barber[]>(hasSupabaseEnv ? [] : initialData.barbers);
-  const [loading, setLoading] = useState(hasSupabaseEnv);
+  const [barbers, setBarbers] = useState<Barber[]>(hasSupabaseEnv || isConfigured ? [] : initialData.barbers);
+  const [loading, setLoading] = useState(Boolean(hasSupabaseEnv && isConfigured));
 
   useEffect(() => {
-    if (!hasSupabaseEnv || !supabaseUrl || !supabasePublishableKey) return;
+    if (!slug) return;
+    if (!hasSupabaseEnv || !supabaseUrl || !supabasePublishableKey) {
+      return;
+    }
     fetch(`${supabaseUrl}/functions/v1/public-booking?slug=${encodeURIComponent(slug)}`, { headers: { apikey: supabasePublishableKey } })
       .then((response) => { if (!response.ok) throw new Error("catalog_unavailable"); return response.json(); })
       .then((payload) => {
+        setShop({
+          id: payload.shop.id,
+          name: payload.shop.name,
+          slug: payload.shop.slug,
+          timezone: payload.shop.timezone ?? "America/Sao_Paulo",
+          logoUrl: payload.shop.logo_url ?? null,
+          primaryColor: payload.shop.primary_color ?? null,
+          accentColor: payload.shop.accent_color ?? null,
+          bookingMessage: payload.shop.booking_message ?? null,
+        });
         setServices(payload.services.map((item: { id: string; name: string; description: string | null; duration_minutes: number; price_cents: number }) => ({ id: item.id, name: item.name, description: item.description ?? "", durationMinutes: item.duration_minutes, priceCents: item.price_cents, active: true })));
         setBarbers(payload.barbers.map((item: { id: string; display_name: string; color: string; avatar_url?: string | null }) => ({ id: item.id, name: item.display_name, avatarUrl: item.avatar_url ?? undefined, role: "Barbeiro", color: item.color, todayCount: 0, workingHours: "", active: true })));
       })
       .catch(() => {
+        setShop(null);
         setServices([]);
         setBarbers([]);
       })
       .finally(() => setLoading(false));
   }, [slug]);
 
-  return { services, barbers, loading };
+  return { shop, services, barbers, loading };
 }

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { LoginForm } from "@/components/login-form";
 
 export default function AdminHomePage() {
-  redirect("/admin/stilo-sampa/entrar");
+  return <LoginForm shopName="BarberFlow" />;
 }

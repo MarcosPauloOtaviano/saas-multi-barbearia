@@ -4,6 +4,6 @@ import { usePathname } from "next/navigation";
 
 export function useAdminBase() {
   const pathname = usePathname();
-  const slug = pathname.match(/^\/admin\/([^/]+)/)?.[1] ?? "stilo-sampa";
-  return `/admin/${slug}`;
+  const slug = pathname.match(/^\/admin\/([^/]+)/)?.[1];
+  return slug ? `/admin/${slug}` : "/admin";
 }

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { BookingWizard } from "@/components/booking-wizard";
+import { redirect } from "next/navigation";
+import { TenantPublicHome } from "@/components/tenant-public-home";
 
 function nameFromSlug(slug: string) {
-  return slug === "stilo-sampa"
-    ? "Barbearia Stilo Sampa"
-    : slug.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
+  return slug.split("-").filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ") || "Estabelecimento";
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -16,8 +15,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function PublicBookingPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ service?: string }> }) {
+export default async function PublicTenantPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ service?: string }> }) {
   const { slug } = await params;
   const { service } = await searchParams;
-  return <BookingWizard slug={slug} initialServiceId={service} />;
+  if (service) redirect(`/b/${slug}/agendar?service=${encodeURIComponent(service)}`);
+  return <TenantPublicHome slug={slug} />;
 }

@@ -1,3 +1,3 @@
-import { CustomerServices } from "@/components/customer-services";
+import { redirect } from "next/navigation";
 
-export default function CustomerServicesPage() { return <CustomerServices />; }
+export default function CustomerServicesPage() { redirect("/conta"); }

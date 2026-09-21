@@ -1,6 +1,5 @@
-import { CustomerHome } from "@/components/customer-home";
-import { CustomerShell } from "@/components/customer-shell";
+import { PlatformHome } from "@/components/platform-home";
 
 export default function HomePage() {
-  return <CustomerShell><CustomerHome /></CustomerShell>;
+  return <PlatformHome />;
 }
