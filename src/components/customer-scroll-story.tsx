@@ -70,7 +70,7 @@ export function CustomerScrollStory({ bookingHref, shopName }: { bookingHref: st
           <div className="customer-story__browser-bar"><span /><span /><span /><small>agendamento oficial</small></div>
           {scenes.map((scene, index) => <div className={`customer-story__screen customer-story__screen--${index + 1}`} key={scene.eyebrow} style={sceneStyle(progress, index)}>
             {index === 0 && <div className="story-screen__hero"><span>{shopName}</span><strong>ONDE<br />SEU ESTILO<br />VIVE</strong><small>agendamento oficial</small></div>}
-            {index === 1 && <div className="story-screen__services"><p>Escolha seu atendimento</p><strong>Serviços pensados<br />para o seu estilo.</strong><div><span>Atendimento escolhido <b>à sua medida</b></span><span>Detalhes transparentes <b>sem surpresa</b></span><span>Experiência Stilo <b>do seu jeito</b></span></div></div>}
+            {index === 1 && <div className="story-screen__services"><p>Escolha seu atendimento</p><strong>Serviços pensados<br />para o seu estilo.</strong><div><span>Atendimento escolhido <b>à sua medida</b></span><span>Detalhes transparentes <b>sem surpresa</b></span><span>Experiência do seu jeito <b>sem complicação</b></span></div></div>}
             {index === 2 && <div className="story-screen__team"><p>Seu profissional</p><strong>Quem vai cuidar<br />do seu próximo visual?</strong><div><span><i><UserRound /></i> Profissional <b>Disponível</b></span><span><i><CalendarCheck2 /></i> Escolha um horário <b>Agora</b></span></div></div>}
           </div>)}
           <div className="customer-story__grain" />
