@@ -20,12 +20,13 @@ Deno.serve(async (request) => {
       const slug = new URL(request.url).searchParams.get("slug") ?? "";
       const { data: shop, error: shopError } = await supabase.from("barbershops").select("id,name,slug,timezone,logo_url,primary_color,accent_color,booking_message").eq("slug", slug).eq("active", true).eq("public_booking_enabled", true).single();
       if (shopError || !shop) return json(request, { error: "barbershop_not_found" }, 404);
-      const [{ data: services, error: servicesError }, { data: barbers, error: barbersError }, { data: barberServices, error: barberServicesError }] = await Promise.all([
+      const [{ data: services, error: servicesError }, { data: barbers, error: barbersError }, { data: barberServices, error: barberServicesError }, { data: products, error: productsError }] = await Promise.all([
         supabase.from("services").select("id,name,description,duration_minutes,price_cents").eq("barbershop_id", shop.id).eq("active", true).order("name"),
         supabase.from("barbers").select("id,display_name,bio,color,avatar_url").eq("barbershop_id", shop.id).eq("active", true).order("display_name"),
         supabase.from("barber_services").select("barber_id,service_id").eq("barbershop_id", shop.id),
+        supabase.from("products").select("id,name,description,price_cents,active").eq("barbershop_id", shop.id).eq("active", true).order("name"),
       ]);
-      if (servicesError || barbersError || barberServicesError) throw servicesError ?? barbersError ?? barberServicesError;
+      if (servicesError || barbersError || barberServicesError || productsError) throw servicesError ?? barbersError ?? barberServicesError ?? productsError;
       const serviceIdsByBarber = new Map<string, string[]>();
       for (const link of barberServices ?? []) {
         serviceIdsByBarber.set(link.barber_id, [...(serviceIdsByBarber.get(link.barber_id) ?? []), link.service_id]);
@@ -34,6 +35,7 @@ Deno.serve(async (request) => {
         shop,
         services: services ?? [],
         barbers: (barbers ?? []).map((barber) => ({ ...barber, service_ids: serviceIdsByBarber.get(barber.id) ?? [] })),
+        products: products ?? [],
       });
     }
 

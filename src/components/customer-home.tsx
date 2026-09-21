@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Clock3, RotateCcw, Scissors, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, Package, RotateCcw, Scissors, ShieldCheck, Sparkles } from "lucide-react";
 import { BarberAvatar } from "@/components/barber-avatar";
 import { CustomerScrollStory } from "@/components/customer-scroll-story";
 import { formatCurrency } from "@/lib/format";
-import type { Barber, Service } from "@/lib/types";
+import type { Barber, Product, Service } from "@/lib/types";
 
-export function CustomerHome({ slug, shopName, services, barbers }: { slug: string; shopName?: string; services: Service[]; barbers: Barber[] }) {
+export function CustomerHome({ slug, shopName, services, barbers, products }: { slug: string; shopName?: string; services: Service[]; barbers: Barber[]; products: Product[] }) {
   const activeServices = services.filter((service) => service.active).slice(0, 3);
   const activeBarbers = barbers.filter((barber) => barber.active);
+  const activeProducts = products.filter((product) => product.active).slice(0, 3);
   const bookingHref = `/b/${slug}/agendar`;
   const servicesHref = `/b/${slug}/servicos`;
   const name = shopName ?? "Sua barbearia";
@@ -43,6 +44,8 @@ export function CustomerHome({ slug, shopName, services, barbers }: { slug: stri
       <div className="customer-section-head"><div><p className="eyebrow">Serviços</p><h2>Escolha seu atendimento</h2></div><Link href={servicesHref}>Ver todos</Link></div>
       {activeServices.length ? <div className="customer-service-scroll">{activeServices.map((service, index) => <Link className="customer-service-card" href={`${bookingHref}?service=${service.id}`} key={service.id}><span className={`customer-service-icon tone-${index + 1}`}><Scissors /></span><strong>{service.name}</strong><small><Clock3 /> {service.durationMinutes} min</small><b>{formatCurrency(service.priceCents)}</b></Link>)}</div> : <p className="customer-empty-copy">Os serviços serão publicados quando a agenda estiver aberta.</p>}
     </section>
+
+    {activeProducts.length > 0 && <section className="customer-section"><div className="customer-section-head"><div><p className="eyebrow">Para levar</p><h2>Cuidados para continuar em casa</h2></div><Link href={`/b/${slug}/produtos`}>Ver produtos</Link></div><div className="customer-product-scroll">{activeProducts.map((product) => <Link className="customer-product-card" href={`/b/${slug}/produtos`} key={product.id}><span className="customer-product-icon"><Package /></span><strong>{product.name}</strong><b>{formatCurrency(product.priceCents)}</b></Link>)}</div></section>}
 
     <section className="customer-return-card"><span><RotateCcw /></span><div><p className="eyebrow">Quando você quiser</p><h2>Seu estilo merece tempo.</h2><p>Reserve em poucos passos e receba os detalhes diretamente no seu e-mail.</p><Link href={bookingHref}>Encontrar um horário <ArrowRight /></Link></div></section>
 
