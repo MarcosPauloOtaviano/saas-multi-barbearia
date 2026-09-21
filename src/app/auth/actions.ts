@@ -26,6 +26,8 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     await supabase.auth.signOut();
     return { error: "Acesso não autorizado para este estabelecimento." };
   }
+  const { data: profile } = await supabase.from("profiles").select("must_change_password").eq("id", data.user.id).maybeSingle();
+  if (profile?.must_change_password) redirect(`/auth/redefinir-senha?next=/admin/${tenantSlug}`);
   redirect(`/admin/${tenantSlug}`);
 }
 

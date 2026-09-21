@@ -17,5 +17,7 @@ export default async function TenantDashboardLayout({ children, params }: { chil
     .eq("barbershops.slug", slug)
     .maybeSingle();
   if (!membership) redirect(`/admin/${slug}/entrar?erro=acesso`);
+  const { data: profile } = await supabase.from("profiles").select("must_change_password").eq("id", user.id).maybeSingle();
+  if (profile?.must_change_password) redirect(`/auth/redefinir-senha?next=/admin/${slug}`);
   return <AppShell slug={slug}>{children}</AppShell>;
 }

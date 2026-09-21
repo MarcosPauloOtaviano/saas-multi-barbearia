@@ -33,6 +33,12 @@ export function ResetPasswordForm({ nextPath }: { nextPath: string }) {
       setError("Não foi possível atualizar a senha. Solicite um novo link e tente novamente.");
       return;
     }
+    const { error: setupError } = await supabase.rpc("complete_password_setup");
+    if (setupError) {
+      setPending(false);
+      setError("A senha foi alterada, mas não foi possível concluir a ativação. Entre novamente e tente de novo.");
+      return;
+    }
     await supabase.auth.signOut();
     router.replace(nextPath);
     router.refresh();

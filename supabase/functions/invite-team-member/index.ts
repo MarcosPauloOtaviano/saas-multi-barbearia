@@ -24,8 +24,9 @@ Deno.serve(async (request) => {
     const role = String(body.role ?? "") as InviteRole;
     const color = /^#[0-9a-f]{6}$/i.test(String(body.color ?? "")) ? String(body.color) : "#356f68";
     const existingBarberId = body.barberId ? String(body.barberId) : null;
+    const initialPassword = String(body.initialPassword ?? "");
 
-    if (!barbershopId || fullName.length < 2 || !email.includes("@") || !["manager", "barber", "receptionist"].includes(role)) {
+    if (!barbershopId || fullName.length < 2 || !email.includes("@") || !["manager", "barber", "receptionist"].includes(role) || initialPassword.length < 8 || !/[a-z]/.test(initialPassword) || !/[A-Z]/.test(initialPassword) || !/[0-9]/.test(initialPassword)) {
       return json(request, { error: "invalid_payload" }, 400);
     }
 
@@ -47,24 +48,27 @@ Deno.serve(async (request) => {
     const { data: shop } = await admin.from("barbershops").select("slug").eq("id", barbershopId).single();
     if (!shop) return json(request, { error: "shop_unavailable" }, 404);
 
-    const siteUrl = Deno.env.get("SITE_URL") ?? "http://localhost:3000";
-    const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback?type=invite&next=/admin/${shop.slug}`;
-    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName },
-      redirectTo,
+    // O proprietário entrega as credenciais por um canal seguro. A conta é
+    // confirmada aqui para funcionar sem depender de e-mail transacional.
+    const { data: invited, error: inviteError } = await admin.auth.admin.createUser({
+      email,
+      password: initialPassword,
+      email_confirm: true,
+      user_metadata: { full_name: fullName },
     });
 
     if (inviteError || !invited.user) {
-      return json(request, { error: inviteError?.message ?? "invite_failed" }, 409);
+      const message = inviteError?.message?.toLowerCase() ?? "";
+      return json(request, { error: message.includes("already") || message.includes("registered") ? "email_exists" : "create_failed" }, 409);
     }
 
     try {
-      const { error: profileError } = await admin.from("profiles").upsert({ id: invited.user.id, full_name: fullName, email });
+      const { error: profileError } = await admin.from("profiles").upsert({ id: invited.user.id, full_name: fullName, email, must_change_password: true });
       if (profileError) throw profileError;
 
       const { data: membership, error: membershipError } = await admin
         .from("memberships")
-        .insert({ barbershop_id: barbershopId, user_id: invited.user.id, role, status: "invited" })
+        .insert({ barbershop_id: barbershopId, user_id: invited.user.id, role, status: "active" })
         .select("id")
         .single();
       if (membershipError) throw membershipError;
@@ -82,7 +86,7 @@ Deno.serve(async (request) => {
       }
 
       return json(request, {
-        member: { id: membership.id, userId: invited.user.id, name: fullName, email, role, status: "invited", barberId, color },
+        member: { id: membership.id, userId: invited.user.id, name: fullName, email, role, status: "active", barberId, color },
       }, 201);
     } catch (databaseError) {
       await admin.auth.admin.deleteUser(invited.user.id);

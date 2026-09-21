@@ -13,6 +13,27 @@ export function CustomerHome() {
   const activeBarbers = barbers.filter((barber) => barber.active);
 
   return <div className="customer-home">
+    <section className="customer-mobile-home" aria-labelledby="customer-mobile-title">
+      <div className="customer-mobile-home__hero">
+        <div className="customer-mobile-home__hero-top">
+          <span className="customer-mobile-home__eyebrow">Stilo Sampa</span>
+          <span className="customer-mobile-home__status"><i /> Agenda aberta</span>
+        </div>
+        <h1 id="customer-mobile-title">Seu próximo corte, sem complicação.</h1>
+        <p>Escolha o serviço, o barbeiro e um horário. Tudo em poucos toques e sem precisar criar senha.</p>
+        <Link className="customer-mobile-home__cta" href="/b/stilo-sampa"><span><Scissors /></span><strong>Agendar horário</strong><ArrowRight /></Link>
+        <div className="customer-mobile-home__proof" aria-label="Vantagens do agendamento">
+          <span><CheckCircle2 /> Sem cadastro</span>
+          <span><ShieldCheck /> Confirmação segura</span>
+        </div>
+      </div>
+
+      <div className="customer-mobile-home__steps" aria-label="Como agendar">
+        <div><b>01</b><span>Escolha o serviço</span></div>
+        <div><b>02</b><span>Selecione o barbeiro</span></div>
+        <div><b>03</b><span>Reserve seu horário</span></div>
+      </div>
+    </section>
     <CustomerScrollStory />
     <Link className="customer-primary-cta" href="/b/stilo-sampa"><span><Scissors /></span><div><strong>Agendar novo horário</strong><small>Veja os horários realmente disponíveis</small></div><ArrowRight /></Link>
 

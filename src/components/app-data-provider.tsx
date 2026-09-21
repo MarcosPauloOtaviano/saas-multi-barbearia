@@ -13,7 +13,7 @@ type NewClient = Omit<Client, "id" | "visits" | "lastVisit">;
 type NewService = Omit<Service, "id" | "active">;
 type EditableService = Omit<Service, "active">;
 type NewBarber = Pick<Barber, "name" | "color">;
-type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string; barberId?: string };
+type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string; barberId?: string; initialPassword: string };
 type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active">;
 
 function barberMediaPath(publicUrl?: string) {
@@ -54,6 +54,8 @@ type AppDataContextValue = {
   updateService: (service: EditableService) => Promise<{ ok: boolean; message: string }>;
   addBarber: (barber: NewBarber) => Promise<{ ok: boolean; message: string }>;
   inviteTeamMember: (member: TeamInvite) => Promise<{ ok: boolean; message: string }>;
+  setBarberActive: (barberId: string, active: boolean) => Promise<{ ok: boolean; message: string }>;
+  deleteBarber: (barberId: string) => Promise<{ ok: boolean; message: string }>;
   saveBarberSchedule: (barberId: string, schedule: ScheduleEntry[]) => Promise<{ ok: boolean; message: string }>;
   updateBarberAvatar: (barberId: string, file: File) => Promise<{ ok: boolean; message: string }>;
   toggleService: (id: string) => Promise<{ ok: boolean; message: string }>;
@@ -270,11 +272,45 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     },
     inviteTeamMember: async (member) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
-      const { data, error } = await createClient().functions.invoke("invite-team-member", { body: { barbershopId: remoteTenantId.current, fullName: member.name, email: member.email, role: member.role, color: member.color, barberId: member.barberId } });
-      if (error || !data?.member) return { ok: false, message: "Não foi possível enviar o convite. Verifique se o e-mail já possui uma conta." };
+      const { data, error } = await createClient().functions.invoke("invite-team-member", { body: { barbershopId: remoteTenantId.current, fullName: member.name, email: member.email, role: member.role, color: member.color, barberId: member.barberId, initialPassword: member.initialPassword } });
+      if (error || !data?.member) return { ok: false, message: data?.error === "email_exists" ? "Este e-mail já possui acesso. Use outro endereço." : "Não foi possível criar o acesso. Verifique os dados e tente novamente." };
       setTeamMembers((current) => [...current, data.member as TeamMember]);
       if (data.member.barberId) setBarbers((current) => current.some(b=>b.id===data.member.barberId)?current:[...current, { id: data.member.barberId, name: member.name, role: "Barbeiro", color: member.color, todayCount: 0, workingHours: "Definir horários", active: true }]);
-      return { ok: true, message: "Convite enviado. O acesso só será ativado pelo link do e-mail." };
+      return { ok: true, message: "Acesso criado. Entregue a senha inicial ao barbeiro por um canal seguro; no primeiro acesso ele deverá trocar a senha." };
+    },
+    setBarberActive: async (barberId, active) => {
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const barber = barbers.find((item) => item.id === barberId);
+      if (!barber) return { ok: false, message: "Profissional não encontrado." };
+      const supabase = createClient();
+      const { error: barberError } = await supabase.from("barbers").update({ active }).eq("id", barberId).eq("barbershop_id", remoteTenantId.current);
+      if (barberError) return { ok: false, message: "Não foi possível atualizar o status do profissional." };
+      const member = teamMembers.find((item) => item.barberId === barberId);
+      if (member) {
+        const { error: membershipError } = await supabase.from("memberships").update({ status: active ? "active" : "suspended" }).eq("id", member.id).eq("barbershop_id", remoteTenantId.current);
+        if (membershipError) {
+          await supabase.from("barbers").update({ active: !active }).eq("id", barberId).eq("barbershop_id", remoteTenantId.current);
+          return { ok: false, message: "Não foi possível atualizar o acesso do profissional." };
+        }
+        setTeamMembers((current) => current.map((item) => item.id === member.id ? { ...item, status: active ? "active" : "suspended" } : item));
+      }
+      setBarbers((current) => current.map((item) => item.id === barberId ? { ...item, active } : item));
+      return { ok: true, message: active ? "Profissional reativado." : "Profissional inativado e acesso suspenso." };
+    },
+    deleteBarber: async (barberId) => {
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      if (role !== "owner") return { ok: false, message: "Somente o proprietário pode excluir perfis." };
+      const barber = barbers.find((item) => item.id === barberId);
+      if (!barber) return { ok: false, message: "Profissional não encontrado." };
+      if (barber.active) return { ok: false, message: "Inative o profissional antes de excluir o perfil." };
+      const supabase = createClient();
+      const { error } = await supabase.from("barbers").delete().eq("id", barberId).eq("barbershop_id", remoteTenantId.current);
+      if (error) return { ok: false, message: error.code === "23503" ? "Não é possível excluir um perfil com histórico de agendamentos. Mantenha-o inativo para preservar o histórico." : "Não foi possível excluir o perfil." };
+      const member = teamMembers.find((item) => item.barberId === barberId);
+      if (member) await supabase.from("memberships").delete().eq("id", member.id).eq("barbershop_id", remoteTenantId.current);
+      setBarbers((current) => current.filter((item) => item.id !== barberId));
+      if (member) setTeamMembers((current) => current.filter((item) => item.id !== member.id));
+      return { ok: true, message: "Perfil excluído da equipe." };
     },
     saveBarberSchedule: async (barberId, schedule) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
