@@ -37,7 +37,7 @@ export function CustomerHome({ slug, shopName, services, barbers, products }: { 
         <div><b>03</b><span>Reserve seu horário</span></div>
       </div>
     </section>
-    <CustomerScrollStory bookingHref={bookingHref} />
+    <CustomerScrollStory bookingHref={bookingHref} shopName={name} />
     <Link className="customer-primary-cta" href={bookingHref}><span><Scissors /></span><div><strong>Agendar novo horário</strong><small>Veja os horários realmente disponíveis</small></div><ArrowRight /></Link>
 
     <section className="customer-section">

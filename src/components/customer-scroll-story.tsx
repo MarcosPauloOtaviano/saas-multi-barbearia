@@ -23,7 +23,7 @@ function sceneStyle(progress: number, index: number): CSSProperties {
   };
 }
 
-export function CustomerScrollStory({ bookingHref }: { bookingHref: string }) {
+export function CustomerScrollStory({ bookingHref, shopName }: { bookingHref: string; shopName: string }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0);
 
@@ -53,7 +53,7 @@ export function CustomerScrollStory({ bookingHref }: { bookingHref: string }) {
       <div className="customer-story__intro">
         <p className="eyebrow">Uma nova forma de agendar</p>
         <h2 id="customer-story-title">Seu estilo merece uma experiência à altura.</h2>
-        <p>Role para conhecer o atendimento da Stilo Sampa antes de escolher seu horário.</p>
+        <p>Role para conhecer o atendimento da {shopName} antes de escolher seu horário.</p>
       </div>
       <div className="customer-story__stage">
         <div className="customer-story__copy" aria-live="polite">
@@ -69,9 +69,9 @@ export function CustomerScrollStory({ bookingHref }: { bookingHref: string }) {
         <div className="customer-story__viewport" aria-hidden="true">
           <div className="customer-story__browser-bar"><span /><span /><span /><small>agendamento oficial</small></div>
           {scenes.map((scene, index) => <div className={`customer-story__screen customer-story__screen--${index + 1}`} key={scene.eyebrow} style={sceneStyle(progress, index)}>
-            {index === 0 && <div className="story-screen__hero"><span>STILO<br />SAMPA</span><strong>ONDE<br />SEU ESTILO<br />VIVE</strong><small>agendamento da Stilo Sampa</small></div>}
+            {index === 0 && <div className="story-screen__hero"><span>{shopName}</span><strong>ONDE<br />SEU ESTILO<br />VIVE</strong><small>agendamento oficial</small></div>}
             {index === 1 && <div className="story-screen__services"><p>Escolha seu atendimento</p><strong>Serviços pensados<br />para o seu estilo.</strong><div><span>Atendimento escolhido <b>à sua medida</b></span><span>Detalhes transparentes <b>sem surpresa</b></span><span>Experiência Stilo <b>do seu jeito</b></span></div></div>}
-            {index === 2 && <div className="story-screen__team"><p>Seu profissional</p><strong>Quem vai cuidar<br />do seu próximo visual?</strong><div><span><i><UserRound /></i> Roberto <b>Disponível</b></span><span><i><CalendarCheck2 /></i> Escolha um horário <b>Agora</b></span></div></div>}
+            {index === 2 && <div className="story-screen__team"><p>Seu profissional</p><strong>Quem vai cuidar<br />do seu próximo visual?</strong><div><span><i><UserRound /></i> Profissional <b>Disponível</b></span><span><i><CalendarCheck2 /></i> Escolha um horário <b>Agora</b></span></div></div>}
           </div>)}
           <div className="customer-story__grain" />
         </div>

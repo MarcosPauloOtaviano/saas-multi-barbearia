@@ -83,7 +83,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [role, setRole] = useState<MemberRole>("barber");
   const [currentUserName, setCurrentUserName] = useState("Mantena");
-  const [shopName, setShopName] = useState("Barbearia Stilo Sampa");
+  const [shopName, setShopName] = useState("Estabelecimento");
   const [remoteBarberId, setRemoteBarberId] = useState<string | null>(null);
   const remoteTenantId = useRef<string | null>(null);
 
