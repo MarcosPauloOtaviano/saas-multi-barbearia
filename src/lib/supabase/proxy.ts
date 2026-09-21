@@ -19,8 +19,9 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
   const path = request.nextUrl.pathname;
   const loginMatch = path.match(/^\/admin\/([^/]+)\/entrar\/?$/);
+  const establishmentChooser = path === "/admin/escolher-estabelecimento" || path === "/admin/escolher-estabelecimento/";
   const adminMatch = path.match(/^\/admin\/([^/]+)(?:\/|$)/);
-  const isProtectedAdmin = Boolean(adminMatch && !loginMatch);
+  const isProtectedAdmin = Boolean(adminMatch && !loginMatch && !establishmentChooser);
   if (!user && isProtectedAdmin) {
     const url = request.nextUrl.clone();
     url.pathname = `/admin/${adminMatch?.[1]}/entrar`;
