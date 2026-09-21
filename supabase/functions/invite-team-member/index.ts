@@ -23,6 +23,7 @@ Deno.serve(async (request) => {
     const email = String(body.email ?? "").trim().toLowerCase().slice(0, 254);
     const role = String(body.role ?? "") as InviteRole;
     const color = /^#[0-9a-f]{6}$/i.test(String(body.color ?? "")) ? String(body.color) : "#356f68";
+    const existingBarberId = body.barberId ? String(body.barberId) : null;
 
     if (!barbershopId || fullName.length < 2 || !email.includes("@") || !["manager", "barber", "receptionist"].includes(role)) {
       return json(request, { error: "invalid_payload" }, 400);
@@ -39,8 +40,15 @@ Deno.serve(async (request) => {
     const canInvite = caller?.role === "owner" || (caller?.role === "manager" && ["barber", "receptionist"].includes(role));
     if (!canInvite) return json(request, { error: "not_authorized" }, 403);
 
+    if (existingBarberId) {
+      const { data: existing } = await admin.from("barbers").select("id").eq("id", existingBarberId).eq("barbershop_id", barbershopId).is("membership_id", null).maybeSingle();
+      if (role !== "barber" || !existing) return json(request, { error: "professional_unavailable" }, 409);
+    }
+    const { data: shop } = await admin.from("barbershops").select("slug").eq("id", barbershopId).single();
+    if (!shop) return json(request, { error: "shop_unavailable" }, 404);
+
     const siteUrl = Deno.env.get("SITE_URL") ?? "http://localhost:3000";
-    const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback?next=/admin`;
+    const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback?type=invite&next=/admin/${shop.slug}`;
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName },
       redirectTo,
@@ -63,21 +71,14 @@ Deno.serve(async (request) => {
 
       let barberId: string | null = null;
       if (role === "barber") {
-        const { data: barber, error: barberError } = await admin
-          .from("barbers")
-          .insert({ barbershop_id: barbershopId, membership_id: membership.id, display_name: fullName, color })
-          .select("id")
-          .single();
+        const query = existingBarberId
+          ? admin.from("barbers").update({ membership_id: membership.id }).eq("id", existingBarberId).eq("barbershop_id", barbershopId).is("membership_id", null)
+          : admin.from("barbers").insert({ barbershop_id: barbershopId, membership_id: membership.id, display_name: fullName, color });
+        const { data: barber, error: barberError } = await query.select("id").single();
         if (barberError) throw barberError;
         barberId = barber.id;
 
-        const { data: services } = await admin.from("services").select("id").eq("barbershop_id", barbershopId).eq("active", true);
-        if (services?.length) {
-          const { error: serviceError } = await admin.from("barber_services").insert(
-            services.map((service) => ({ barbershop_id: barbershopId, barber_id: barberId, service_id: service.id })),
-          );
-          if (serviceError) throw serviceError;
-        }
+        // O vínculo dos serviços é criado pela trigger atômica do banco.
       }
 
       return json(request, {

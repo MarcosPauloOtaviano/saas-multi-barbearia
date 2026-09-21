@@ -31,3 +31,12 @@ Data: 20 de setembro de 2026
 - Navegador: `/b/salao-dos-cobras` abriu com identidade e título próprios.
 - Navegador: admin acessou Equipe e convite; barbeiro recebeu bloqueio nessa área.
 - `pnpm check`: typecheck, 6 testes, lint e build de produção aprovados.
+
+## Verificação operacional — 21/09/2026
+
+- Serviços e produtos foram testados no painel autenticado em viewport de 375 px e gravaram no Supabase; os registros temporários foram removidos ao final.
+- Funcionamento exibiu os sete dias reais (segunda a sábado abertos, domingo fechado) e o salvamento real foi confirmado.
+- A agenda passou a usar a data escolhida e os dados retornados, sem “horário livre” ou contagens inventadas.
+- A migration de regressão foi executada com fixtures dentro de rollback e validou RLS, atribuição de serviços, folgas, pausa da loja, conflitos de barbeiro/cliente, limite de fechamento e foto própria.
+- A limpeza de produção foi confirmada: 1 estabelecimento, 2 barbeiros (Mantena e Roberto), 1 proprietário ativo, 0 serviços, 0 produtos e 0 agendamentos.
+- Roberto permanece sem login até que Mantena informe o e-mail dele pelo fluxo “Liberar acesso”; o convite passa a vincular o profissional existente sem criar duplicidade.

@@ -8,6 +8,9 @@ import { ReportsView } from "@/components/reports-view";
 import { ServicesView } from "@/components/services-view";
 import { SettingsView } from "@/components/settings-view";
 import { TeamView } from "@/components/team-view";
+import { CatalogView } from "@/components/catalog-view";
+import { HoursView } from "@/components/hours-view";
+import { ProfileView } from "@/components/profile-view";
 
 export default async function TenantDashboardPage({ params }: { params: Promise<{ section?: string[] }> }) {
   const { section = [] } = await params;
@@ -21,6 +24,9 @@ export default async function TenantDashboardPage({ params }: { params: Promise<
     case "notificacoes": return <NotificationsView />;
     case "relatorios": return <ReportsView />;
     case "servicos": return <ServicesView />;
+    case "produtos": return <CatalogView kind="product" />;
+    case "horarios": return <HoursView />;
+    case "perfil": return <ProfileView />;
     default: notFound();
   }
 }

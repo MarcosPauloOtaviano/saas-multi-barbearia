@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bell, CalendarDays, ChevronDown, House, LogOut, Scissors, Settings, UserRoundCog, UsersRound } from "lucide-react";
+import { BarChart3, Bell, CalendarDays, ChevronDown, House, LogOut, Scissors, Settings, UserRoundCog, UsersRound, Menu, X, Package, Clock, UserRound } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { signOut } from "@/app/auth/actions";
 import type { MemberRole } from "@/lib/types";
@@ -13,6 +14,9 @@ const navigation = [
   { path: "/agenda", label: "Agenda", icon: CalendarDays, roles: ["owner", "manager", "barber", "receptionist"] },
   { path: "/clientes", label: "Clientes", icon: UsersRound, roles: ["owner", "manager", "receptionist"] },
   { path: "/servicos", label: "Serviços", icon: Scissors, roles: ["owner", "manager"] },
+  { path: "/produtos", label: "Produtos", icon: Package, roles: ["owner", "manager"] },
+  { path: "/horarios", label: "Funcionamento", icon: Clock, roles: ["owner", "manager"] },
+  { path: "/perfil", label: "Meu perfil", icon: UserRound, roles: ["owner", "manager", "barber", "receptionist"] },
   { path: "/equipe", label: "Equipe", icon: UserRoundCog, roles: ["owner", "manager"] },
   { path: "/relatorios", label: "Relatórios", icon: BarChart3, roles: ["owner", "manager"] },
   { path: "/notificacoes", label: "Avisos", icon: Bell, roles: ["owner", "manager", "barber", "receptionist"] },
@@ -23,16 +27,19 @@ const roleLabels: Record<MemberRole, string> = { owner: "Proprietário", manager
 
 export function AppShell({ children, slug }: { children: React.ReactNode; slug: string }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const base = `/admin/${slug}`;
-  const { notifications, role, currentUserName, shopName } = useAppData();
+  const { notifications, role, currentUserName, shopName, loading, loadError } = useAppData();
   const unread = notifications.filter((note) => !note.read).length;
   const allowedNavigation = navigation.filter((item) => item.roles.includes(role));
-  const mobileNavigation = allowedNavigation.filter((item) => ["", "/agenda", "/clientes", "/notificacoes"].includes(item.path)).slice(0, 4);
   const isCurrent = (path: string) => path === "" ? pathname === base : pathname.startsWith(`${base}${path}`);
   const routeAllowed = allowedNavigation.some((item) => isCurrent(item.path));
   const userInitials = initials(currentUserName);
   const todayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   const logoutAction = signOut.bind(null, slug);
+
+  if (loading) return <main className="auth-shell"><p role="status">Carregando sua barbearia…</p></main>;
+  if (loadError) return <main className="auth-shell"><section><h1>Não foi possível abrir o painel</h1><p role="alert">{loadError}</p><button className="button primary" onClick={() => window.location.reload()}>Tentar novamente</button><form action={logoutAction}><button className="button ghost">Sair</button></form></section></main>;
 
   return <main className="app-frame">
     <aside className="desktop-rail desktop-rail--full" aria-label="Navegação principal">
@@ -46,7 +53,8 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
       {routeAllowed ? children : <section className="content-card access-card"><UserRoundCog /><div><p className="eyebrow">Acesso protegido</p><h1>Esta área não faz parte do seu perfil</h1><p>O perfil de {roleLabels[role].toLowerCase()} vê somente as funções necessárias para o trabalho.</p><Link className="button primary" href={`${base}/agenda`}>Abrir minha agenda</Link></div></section>}
     </section>
 
-    <nav className={`mobile-nav ${mobileNavigation.length < 4 ? "is-compact" : ""}`} aria-label="Navegação principal">{mobileNavigation.slice(0, 2).map(({ path, label, icon: Icon }) => <Link className={isCurrent(path) ? "is-active" : ""} href={`${base}${path}`} key={path}><Icon /><span>{label}</span></Link>)}<Link className="mobile-create" href={`${base}/agenda?novo=1`} aria-label="Novo agendamento"><span>+</span></Link>{mobileNavigation.slice(2, 4).map(({ path, label, icon: Icon }) => <Link className={isCurrent(path) ? "is-active" : ""} href={`${base}${path}`} key={path}><Icon /><span>{label}</span>{label === "Avisos" && unread > 0 && <b>{unread}</b>}</Link>)}</nav>
+    <nav className="mobile-nav operation-nav" aria-label="Navegação principal"><Link href={base} className={isCurrent("") ? "is-active" : ""}><House /><span>Início</span></Link><Link href={`${base}/agenda`} className={isCurrent("/agenda") ? "is-active" : ""}><CalendarDays /><span>Agenda</span></Link><Link href={`${base}/perfil`} className={isCurrent("/perfil") ? "is-active" : ""}><UserRound /><span>Meu perfil</span></Link><button onClick={() => setMenuOpen(true)} aria-expanded={menuOpen} aria-controls="mobile-menu"><Menu /><span>Mais</span></button></nav>
+    {menuOpen && <div className="modal-backdrop"><section className="modal-card mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title"><div className="modal-header"><h2 id="mobile-menu-title">{shopName}</h2><button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X /></button></div><nav>{allowedNavigation.map(({path,label,icon:Icon}) => <Link key={path} href={`${base}${path}`} onClick={() => setMenuOpen(false)}><Icon size={20}/>{label}</Link>)}</nav><form action={logoutAction}><button className="button ghost"><LogOut size={18}/>Sair da conta</button></form></section></div>}
   </main>;
 }
 

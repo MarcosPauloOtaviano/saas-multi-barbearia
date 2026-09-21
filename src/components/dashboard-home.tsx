@@ -14,17 +14,19 @@ export function DashboardHome() {
   const today = appointments.filter((item) => item.date === todayIso && !["cancelled", "no_show"].includes(item.status)).sort((a, b) => a.time.localeCompare(b.time));
   const confirmed = today.filter((item) => item.status === "confirmed").length;
   const pending = today.filter((item) => item.status === "pending").length;
-  const next = today[0];
+  const nowTime = new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
+  const next = today.find(item => item.status === "in_progress" || (["pending","confirmed"].includes(item.status) && item.time >= nowTime));
   const returnClient = clients.find((client) => client.averageReturnDays);
 
   return (
     <>
-      <div className="welcome-line"><div><p className="eyebrow">{role === "barber" ? "Minha rotina" : "Visão geral"}</p><h1>Bom dia, {currentUserName}.</h1></div><Link className="button primary small" href={`${base}/agenda?novo=1`}>+ Novo agendamento</Link></div>
+      <div className="welcome-line"><div><p className="eyebrow">{role === "barber" ? "Minha rotina" : "Visão geral"}</p><h1>Olá, {currentUserName}.</h1></div><Link className="button primary small" href={`${base}/agenda?novo=1`}>+ Novo agendamento</Link></div>
+      {(role==="owner"||role==="manager")&&<nav className="management-shortcuts" aria-label="Administração"><Link href={`${base}/servicos`}>Serviços</Link><Link href={`${base}/produtos`}>Produtos</Link><Link href={`${base}/equipe`}>Equipe</Link><Link href={`${base}/horarios`}>Dias e horários</Link></nav>}
       <div className="dashboard-grid">
         <section className="hero-card" aria-labelledby="proximo-cliente">
-          <div className="hero-card__topline"><span><Sparkles size={15} /> Próximo cliente</span><span className="status-pill"><span /> Confirmado</span></div>
+          <div className="hero-card__topline"><span><Sparkles size={15} /> Próximo cliente</span>{next&&<span className="status-pill">{statusLabel[next.status]}</span>}</div>
           <div className="next-appointment">
-            <div><p className="next-time">{next?.time ?? "—"}</p><p className="time-until">em 28 minutos</p></div>
+            <div><p className="next-time">{next?.time ?? "—"}</p><p className="time-until">{next?"Hoje":""}</p></div>
             <div className="appointment-copy"><h2 id="proximo-cliente">{next?.clientName ?? "Agenda livre"}</h2><p>{next ? `${next.serviceName} · ${next.durationMinutes} min` : "Nenhum atendimento próximo"}</p></div>
           </div>
           <Link className="primary-action" href={`${base}/agenda${next ? `?appointment=${next.id}` : ""}`}>Ver agenda <ChevronRight size={18} /></Link>

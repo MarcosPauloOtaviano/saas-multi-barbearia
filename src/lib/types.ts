@@ -43,6 +43,9 @@ export type Service = {
   active: boolean;
 };
 
+export type Product = Omit<Service, "durationMinutes">;
+export type ScheduleDay = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active">;
+
 export type Barber = {
   id: string;
   name: string;

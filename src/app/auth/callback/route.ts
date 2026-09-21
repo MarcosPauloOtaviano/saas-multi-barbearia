@@ -11,12 +11,12 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (type === "recovery") {
+      await supabase.rpc("accept_team_invitation");
+      if (type === "recovery" || type === "invite") {
         const resetUrl = new URL("/auth/redefinir-senha", url.origin);
         resetUrl.searchParams.set("next", next);
         return NextResponse.redirect(resetUrl);
       }
-      await supabase.rpc("accept_team_invitation");
     }
   }
   return NextResponse.redirect(new URL(next, url.origin));

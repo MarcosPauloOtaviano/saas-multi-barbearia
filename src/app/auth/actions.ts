@@ -36,7 +36,7 @@ export async function sendReset(_: AuthState, formData: FormData): Promise<AuthS
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantSlug)) return { error: "Estabelecimento inválido." };
   const supabase = await createClient();
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/auth/callback?next=/admin/${tenantSlug}/entrar` });
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/auth/callback?type=recovery&next=/admin/${tenantSlug}/entrar` });
   if (error) return { error: "Não foi possível enviar o e-mail agora." };
   return { success: "Se o endereço estiver cadastrado, você receberá as instruções." };
 }

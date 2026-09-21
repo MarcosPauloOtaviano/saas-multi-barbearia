@@ -22,25 +22,34 @@ export function AgendaView() {
   const [view, setView] = useState<"day" | "week">("day");
   const [barberFilter, setBarberFilter] = useState(searchParams.get("barber") ?? currentBarberId ?? "all");
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
+  const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-  const todayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date());
+  const [selectedDate, setSelectedDate] = useState(todayIso);
+  function shiftDate(offset: number) { const date = new Date(`${selectedDate}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + offset); setSelectedDate(date.toISOString().slice(0,10)); }
+  const weekStart = new Date(`${selectedDate}T12:00:00Z`);
+  weekStart.setUTCDate(weekStart.getUTCDate() - (weekStart.getUTCDay()+6)%7);
+  const weekDates = Array.from({length:7},(_,i)=>{const date=new Date(weekStart);date.setUTCDate(date.getUTCDate()+i);return date.toISOString().slice(0,10);});
   const today = useMemo(() => appointments
-    .filter((item) => item.date === todayIso && (barberFilter === "all" || item.barberId === barberFilter))
-    .sort((a, b) => a.time.localeCompare(b.time)), [appointments, barberFilter, todayIso]);
+    .filter((item) => item.date === selectedDate && (barberFilter === "all" || item.barberId === barberFilter))
+    .sort((a, b) => a.time.localeCompare(b.time)), [appointments, barberFilter, selectedDate]);
 
   function closeDetail() { router.push(`${base}/agenda`); }
 
   async function submitAppointment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    if (busy) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const service = services.find((item) => item.id === data.get("service"));
     const barber = barbers.find((item) => item.id === data.get("barber"));
     const client = clients.find((item) => item.id === data.get("client"));
     if (!service || !barber || !client) return;
+    setBusy(true);
+    try {
     const result = await addAppointment({
       clientId: client.id, clientName: client.name,
       barberId: barber.id, barberName: barber.name,
@@ -50,9 +59,11 @@ export function AgendaView() {
     });
     setFeedback(result);
     if (result.ok) {
-      event.currentTarget.reset();
+      form.reset();
+      setSelectedDate(String(data.get("date")));
       window.setTimeout(() => { setModalOpen(false); setFeedback(null); router.push(`${base}/agenda`); }, 900);
     }
+    } catch { setFeedback({ok:false,message:"A conexão falhou. Tente novamente."}); } finally { setBusy(false); }
   }
 
   async function submitReschedule(event: FormEvent<HTMLFormElement>) {
@@ -72,7 +83,7 @@ export function AgendaView() {
           <button className={view === "day" ? "is-active" : ""} onClick={() => setView("day")}>Dia</button>
           <button className={view === "week" ? "is-active" : ""} onClick={() => setView("week")}>Semana</button>
         </div>
-        <div className="date-switcher"><button aria-label="Dia anterior"><ChevronLeft /></button><span><CalendarDays size={17} /> {todayLabel}</span><button aria-label="Próximo dia"><ChevronRight /></button></div>
+        <div className="date-switcher"><button aria-label="Dia anterior" onClick={()=>shiftDate(view==="day"?-1:-7)}><ChevronLeft /></button><input aria-label="Data da agenda" type="date" value={selectedDate} onChange={e=>e.target.value&&setSelectedDate(e.target.value)} /><button aria-label="Próximo dia" onClick={()=>shiftDate(view==="day"?1:7)}><ChevronRight /></button></div>
         {role !== "barber" && <label className="select-control"><Filter size={16} /><select value={barberFilter} onChange={(event) => setBarberFilter(event.target.value)} aria-label="Filtrar por barbeiro"><option value="all">Todos os barbeiros</option>{barbers.map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>}
       </section>
 
@@ -89,14 +100,12 @@ export function AgendaView() {
                 <span className="timeline-price">{formatCurrency(item.priceCents)}</span>
               </button>
             ))}
-            <button className="free-slot" onClick={() => setModalOpen(true)}><time>16:30</time><span><Plus size={16} /> Horário livre · 45 min</span></button>
+            {!today.length && <p className="table-hint">Nenhum agendamento nesta data.</p>}
           </div>
         </section>
       ) : (
         <section className="week-board">
-          {["Seg 14", "Ter 15", "Qua 16", "Qui 17", "Sex 18", "Sáb 19"].map((day, index) => (
-            <div className={`week-day ${index === 5 ? "is-today" : ""}`} key={day}><strong>{day}</strong><span>{[6, 8, 7, 9, 10, today.length][index]} atendimentos</span><div className="week-bar"><i style={{ height: `${[46, 64, 54, 74, 86, 66][index]}%` }} /></div><small>{index === 5 ? "Hoje" : ""}</small></div>
-          ))}
+          {weekDates.map(day => <button className={`week-day ${day===todayIso?"is-today":""}`} key={day} onClick={()=>{setSelectedDate(day);setView("day");}}><strong>{new Intl.DateTimeFormat("pt-BR",{weekday:"short",day:"numeric",timeZone:"UTC"}).format(new Date(`${day}T12:00:00Z`))}</strong><span>{appointments.filter(a=>a.date===day&&a.status!=="cancelled"&&(barberFilter==="all"||a.barberId===barberFilter)).length} atendimentos</span><small>{day===todayIso?"Hoje":"Ver dia"}</small></button>)}
         </section>
       )}
 
@@ -108,10 +117,10 @@ export function AgendaView() {
               <label className="field full"><span>Cliente</span><select name="client" required defaultValue=""><option value="" disabled>Selecione o cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select></label>
               <label className="field full"><span>Serviço</span><select name="service" required defaultValue=""><option value="" disabled>Selecione o serviço</option>{services.filter((service) => service.active).map((service) => <option value={service.id} key={service.id}>{service.name} · {service.durationMinutes} min · {formatCurrency(service.priceCents)}</option>)}</select></label>
               <label className="field full"><span>Barbeiro</span><select name="barber" required defaultValue={currentBarberId ?? ""}><option value="" disabled>Selecione o barbeiro</option>{barbers.filter((barber) => barber.active && (role !== "barber" || barber.id === currentBarberId)).map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>
-              <label className="field"><span>Data</span><input name="date" type="date" defaultValue={todayIso} required /></label>
-              <label className="field"><span>Horário</span><input name="time" type="time" defaultValue="16:30" required /></label>
+              <label className="field"><span>Data</span><input name="date" type="date" defaultValue={selectedDate} min={todayIso} required /></label>
+              <label className="field"><span>Horário</span><input name="time" type="time" required /></label>
               {feedback && <p className={`form-feedback full ${feedback.ok ? "success" : "error"}`}>{feedback.ok ? <Check size={17} /> : <CircleX size={17} />}{feedback.message}</p>}
-              <div className="modal-actions full"><button type="button" className="button ghost" onClick={() => setModalOpen(false)}>Cancelar</button><button className="button primary" type="submit">Criar agendamento</button></div>
+              <div className="modal-actions full"><button type="button" className="button ghost" onClick={() => setModalOpen(false)}>Cancelar</button><button className="button primary" type="submit" disabled={busy}>{busy?"Salvando…":"Criar agendamento"}</button></div>
             </form>
           </section>
         </div>
