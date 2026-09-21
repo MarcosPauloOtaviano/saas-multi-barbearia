@@ -40,8 +40,9 @@ values (
 );
 
 -- This server-only bootstrap binds an existing Auth user to the clean tenant.
--- It is deliberately unavailable to browsers, anonymous users and staff users.
-create or replace function public.attach_initial_stilo_owner(target_user_id uuid)
+-- The privileged work lives in the private schema; the public wrapper is only
+-- an RPC entry point granted to service_role for the one-time script.
+create or replace function private.attach_initial_stilo_owner(target_user_id uuid)
 returns uuid
 language plpgsql
 security definer
@@ -88,6 +89,17 @@ begin
 
   return membership_id;
 end;
+$$;
+
+revoke all on function private.attach_initial_stilo_owner(uuid) from public, anon, authenticated;
+grant execute on function private.attach_initial_stilo_owner(uuid) to service_role;
+
+create or replace function public.attach_initial_stilo_owner(target_user_id uuid)
+returns uuid
+language sql
+set search_path = ''
+as $$
+  select private.attach_initial_stilo_owner(target_user_id);
 $$;
 
 revoke all on function public.attach_initial_stilo_owner(uuid) from public, anon, authenticated;
