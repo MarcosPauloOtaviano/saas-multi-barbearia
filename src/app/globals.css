@@ -414,6 +414,17 @@ a { color: inherit; }
 .customer-content { width: min(100%, 1120px); margin: 0 auto; padding: 12px 18px 30px; }
 .customer-home { min-width: 0; display: grid; gap: 18px; }
 .customer-home > * { min-width: 0; max-width: 100%; }
+.customer-professional-hero { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr); gap: clamp(22px, 5vw, 70px); align-items: stretch; padding: clamp(28px, 6vw, 76px) 0 clamp(20px, 4vw, 48px); }
+.customer-professional-hero__content { display: grid; align-content: center; max-width: 650px; }
+.customer-professional-hero__content h1 { max-width: 620px; margin: 8px 0 14px; color: var(--ink); font-size: clamp(2.7rem, 6vw, 5.6rem); line-height: .93; letter-spacing: -.075em; }
+.customer-professional-hero__content h1 em { color: var(--copper-dark); font-style: normal; }
+.customer-professional-hero__content > p:not(.eyebrow) { max-width: 510px; margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+.customer-professional-hero__actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; }.customer-professional-hero__actions .button { display: inline-flex; align-items: center; gap: 8px; }.customer-professional-hero__actions svg { width: 16px; }
+.customer-professional-hero__proof { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 20px; color: var(--muted); font-size: .6rem; }.customer-professional-hero__proof span { display: inline-flex; align-items: center; gap: 5px; }.customer-professional-hero__proof svg { width: 14px; color: #4c9277; }
+.customer-professional-hero__card { display: grid; align-content: start; min-height: 310px; padding: clamp(22px, 4vw, 34px); border: 1px solid #284f47; border-radius: 27px; color: white; background: radial-gradient(circle at 90% 0%, rgb(214 143 107 / .35), transparent 34%), linear-gradient(145deg, #183c36, #0a211d); box-shadow: 0 22px 50px rgb(24 60 54 / .18); }
+.customer-professional-hero__card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: rgb(255 255 255 / .68); font-size: .59rem; }.customer-professional-hero__card-top b { padding: 6px 8px; border: 1px solid rgb(255 255 255 / .17); border-radius: 999px; color: #d9efe8; font-size: .51rem; font-weight: 800; }
+.customer-professional-hero__card h2 { max-width: 360px; margin: auto 0 8px; font-size: clamp(1.65rem, 4vw, 2.7rem); line-height: .96; letter-spacing: -.06em; }.customer-professional-hero__card p { max-width: 300px; margin: 0; color: rgb(255 255 255 / .67); font-size: .65rem; line-height: 1.5; }
+.customer-professional-hero__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 28px; padding-top: 16px; border-top: 1px solid rgb(255 255 255 / .14); }.customer-professional-hero__stats span { display: grid; gap: 4px; }.customer-professional-hero__stats strong { font-size: 1.05rem; }.customer-professional-hero__stats small { color: rgb(255 255 255 / .55); font-size: .53rem; }.customer-professional-hero__card-foot { display: flex; align-items: center; gap: 7px; margin-top: 23px; color: #f1b08e; font-size: .6rem; font-weight: 750; }.customer-professional-hero__card-foot svg { width: 15px; }
 .customer-mobile-home { display: none; }
 .customer-welcome { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 9px 1px 2px; }
 .customer-welcome h1, .customer-page-title h1 { margin: 5px 0 6px; font-size: clamp(2rem, 8vw, 3.5rem); line-height: 1; letter-spacing: -0.055em; }
@@ -684,6 +695,11 @@ a { color: inherit; }
   .customer-story { display: none; }
   .customer-primary-cta { display: none; }
   .customer-home > :not(.customer-story):not(.customer-mobile-home) { width: 100%; margin-inline: 0; }
+  .customer-professional-hero { grid-template-columns: 1fr; gap: 17px; padding: 20px 0 8px; }
+  .customer-professional-hero__content h1 { max-width: 370px; font-size: clamp(2.55rem, 13vw, 4rem); }
+  .customer-professional-hero__content > p:not(.eyebrow) { max-width: 360px; font-size: .72rem; }
+  .customer-professional-hero__actions { display: grid; }.customer-professional-hero__actions .button { justify-content: center; }
+  .customer-professional-hero__card { min-height: 245px; padding: 22px; border-radius: 22px; }.customer-professional-hero__card h2 { font-size: 1.9rem; }
   .customer-section, .customer-return-card, .customer-trust { border-radius: 21px; }
 }
 

@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock3, Package, RotateCcw, Scissors, ShieldCheck, Sparkles } from "lucide-react";
 import { BarberAvatar } from "@/components/barber-avatar";
-import { CustomerScrollStory } from "@/components/customer-scroll-story";
 import { formatCurrency } from "@/lib/format";
 import type { Barber, Product, Service } from "@/lib/types";
 
 export function CustomerHome({ slug, shopName, services, barbers, products }: { slug: string; shopName?: string; services: Service[]; barbers: Barber[]; products: Product[] }) {
-  const activeServices = services.filter((service) => service.active).slice(0, 3);
+  const allActiveServices = services.filter((service) => service.active);
+  const activeServices = allActiveServices.slice(0, 3);
   const activeBarbers = barbers.filter((barber) => barber.active);
   const activeProducts = products.filter((product) => product.active).slice(0, 3);
   const bookingHref = `/b/${slug}/agendar`;
@@ -16,29 +16,16 @@ export function CustomerHome({ slug, shopName, services, barbers, products }: { 
   const name = shopName ?? "Sua barbearia";
 
   return <div className="customer-home">
-    <section className="customer-mobile-home" aria-labelledby="customer-mobile-title">
-      <div className="customer-mobile-home__hero">
-        <div className="customer-mobile-home__hero-top">
-          <span className="customer-mobile-home__eyebrow">{name}</span>
-          <span className="customer-mobile-home__status"><i /> Agenda aberta</span>
-        </div>
-        <h1 id="customer-mobile-title">Seu próximo corte, sem complicação.</h1>
-        <p>Escolha o serviço, o barbeiro e um horário. Tudo em poucos toques e sem precisar criar senha.</p>
-        <Link className="customer-mobile-home__cta" href={bookingHref}><span><Scissors /></span><strong>Agendar horário</strong><ArrowRight /></Link>
-        <div className="customer-mobile-home__proof" aria-label="Vantagens do agendamento">
-          <span><CheckCircle2 /> Sem cadastro</span>
-          <span><ShieldCheck /> Confirmação segura</span>
-        </div>
+    <section className="customer-professional-hero" aria-labelledby="customer-professional-title">
+      <div className="customer-professional-hero__content">
+        <p className="eyebrow">Agendamento oficial</p>
+        <h1 id="customer-professional-title">Seu próximo corte, <em>no seu horário.</em></h1>
+        <p>Escolha o serviço, o profissional e um horário disponível. Sem cadastro obrigatório e com confirmação segura por e-mail.</p>
+        <div className="customer-professional-hero__actions"><Link className="button primary" href={bookingHref}><Scissors /> Agendar horário <ArrowRight /></Link><Link className="button ghost" href={servicesHref}>Ver serviços</Link></div>
+        <div className="customer-professional-hero__proof"><span><CheckCircle2 /> Sem cadastro</span><span><ShieldCheck /> Confirmação segura</span></div>
       </div>
-
-      <div className="customer-mobile-home__steps" aria-label="Como agendar">
-        <div><b>01</b><span>Escolha o serviço</span></div>
-        <div><b>02</b><span>Selecione o barbeiro</span></div>
-        <div><b>03</b><span>Reserve seu horário</span></div>
-      </div>
+      <aside className="customer-professional-hero__card" aria-label={`Resumo de ${name}`}><div className="customer-professional-hero__card-top"><span>Agendamento online</span><b>Página oficial</b></div><h2>{name}</h2><p>Um atendimento simples, com as informações certas antes de confirmar.</p><div className="customer-professional-hero__stats"><span><strong>{allActiveServices.length}</strong><small>serviços</small></span><span><strong>{activeBarbers.length}</strong><small>profissionais</small></span><span><strong>4</strong><small>etapas</small></span></div><div className="customer-professional-hero__card-foot"><Scissors /><span>Escolha o seu próximo horário</span></div></aside>
     </section>
-    <CustomerScrollStory bookingHref={bookingHref} shopName={name} />
-    <Link className="customer-primary-cta" href={bookingHref}><span><Scissors /></span><div><strong>Agendar novo horário</strong><small>Veja os horários realmente disponíveis</small></div><ArrowRight /></Link>
 
     <section className="customer-section">
       <div className="customer-section-head"><div><p className="eyebrow">Serviços</p><h2>Escolha seu atendimento</h2></div><Link href={servicesHref}>Ver todos</Link></div>

@@ -18,7 +18,7 @@ export function CustomerShell({ children, tenant = null, showNavigation = Boolea
   const brandName = tenant?.name ?? "BarberFlow";
   const brandCaption = tenant ? "Agendamento oficial" : "Agenda para barbearias";
   return <main className="customer-app">
-    <header className={`customer-header ${pathname === homeHref ? "customer-header--home" : ""}`}>
+    <header className="customer-header">
       <Link className="customer-brand" href={homeHref}><span><Scissors /></span><div><strong>{brandName}</strong><small>{brandCaption}</small></div></Link>
       <Link className="customer-avatar" href={accountHref} aria-label="Minha conta"><UserRound size={18} /></Link>
     </header>
