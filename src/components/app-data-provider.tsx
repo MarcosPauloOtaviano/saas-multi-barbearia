@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 type NewAppointment = Omit<Appointment, "id" | "status" | "source">;
 type NewClient = Omit<Client, "id" | "visits" | "lastVisit">;
 type NewService = Omit<Service, "id" | "active">;
+type EditableService = Omit<Service, "active">;
 type NewBarber = Pick<Barber, "name" | "color">;
 type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string };
 type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active">;
@@ -40,6 +41,7 @@ type AppDataContextValue = {
   rescheduleAppointment: (id: string, date: string, time: string) => Promise<{ ok: boolean; message: string }>;
   addClient: (client: NewClient) => Promise<void>;
   addService: (service: NewService) => Promise<{ ok: boolean; message: string }>;
+  updateService: (service: EditableService) => Promise<{ ok: boolean; message: string }>;
   addBarber: (barber: NewBarber) => Promise<{ ok: boolean; message: string }>;
   inviteTeamMember: (member: TeamInvite) => Promise<{ ok: boolean; message: string }>;
   saveBarberSchedule: (barberId: string, schedule: ScheduleEntry[]) => Promise<{ ok: boolean; message: string }>;
@@ -189,6 +191,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
       setServices((current) => [...current, { ...service, id: data.id, active: true }]);
       return { ok: true, message: "Serviço cadastrado." };
+    },
+    updateService: async (service) => {
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const { error } = await createClient().from("services").update({
+        name: service.name,
+        description: service.description,
+        duration_minutes: service.durationMinutes,
+        price_cents: service.priceCents,
+      }).eq("id", service.id).eq("barbershop_id", remoteTenantId.current);
+      if (error) return { ok: false, message: error.code === "42501" ? "Seu perfil não tem permissão para editar serviços." : "Não foi possível salvar o serviço." };
+      setServices((current) => current.map((item) => item.id === service.id ? { ...item, ...service } : item));
+      return { ok: true, message: "Serviço atualizado." };
     },
     addBarber: async (barber) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
