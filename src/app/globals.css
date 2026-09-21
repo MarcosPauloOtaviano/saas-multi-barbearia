@@ -240,6 +240,7 @@ a { color: inherit; }
 .detail-list dt { color: var(--muted); font-size: 0.65rem; }.detail-list dd { margin: 0; font-size: 0.8rem; font-weight: 760; }
 .drawer-note { display: flex; gap: 10px; margin: 18px 0; padding: 13px; border-radius: 13px; color: #705122; background: var(--amber); }
 .drawer-note span { display: grid; gap: 3px; }.drawer-note strong { font-size: 0.72rem; }.drawer-note small { font-size: 0.63rem; }
+.drawer-hint { margin: 14px 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); font-size: 0.68rem; line-height: 1.45; }
 .drawer-actions { display: grid; gap: 9px; }
 
 /* Clients */

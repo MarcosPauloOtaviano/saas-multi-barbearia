@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, Plus, Scissors, UserRound, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
 import { useAdminBase } from "@/lib/admin-route";
-import type { AppointmentStatus } from "@/lib/types";
+import type { Appointment, AppointmentStatus } from "@/lib/types";
 
 const statusLabels: Record<AppointmentStatus, string> = {
   pending: "Aguardando", confirmed: "Confirmado", in_progress: "Em atendimento",
@@ -25,6 +25,8 @@ export function AgendaView() {
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const [statusFeedback, setStatusFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const [nowMs, setNowMs] = useState(0);
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -36,6 +38,27 @@ export function AgendaView() {
   const today = useMemo(() => appointments
     .filter((item) => item.date === selectedDate && (barberFilter === "all" || item.barberId === barberFilter))
     .sort((a, b) => a.time.localeCompare(b.time)), [appointments, barberFilter, selectedDate]);
+
+  useEffect(() => {
+    const refreshClock = () => setNowMs(Date.now());
+    refreshClock();
+    const timer = window.setInterval(refreshClock, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  function appointmentHasEnded(appointment: Appointment) {
+    if (!nowMs) return false;
+    if (appointment.endsAt) return new Date(appointment.endsAt).getTime() <= nowMs;
+    const startsAt = new Date(`${appointment.date}T${appointment.time}:00`).getTime();
+    return startsAt + appointment.durationMinutes * 60_000 <= nowMs;
+  }
+
+  async function changeStatus(status: Appointment["status"]) {
+    if (!selected) return;
+    const result = await updateAppointmentStatus(selected.id, status);
+    setStatusFeedback(result);
+    if (result.ok) window.setTimeout(() => setStatusFeedback(null), 3_000);
+  }
 
   function closeDetail() { router.push(`${base}/agenda`); }
 
@@ -133,11 +156,15 @@ export function AgendaView() {
             <span className={`status-tag large ${selected.status}`}>{statusLabels[selected.status]}</span>
             <dl className="detail-list"><div><dt>Data e horário</dt><dd>{new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${selected.date}T12:00:00Z`))}, {selected.time}</dd></div><div><dt>Serviço</dt><dd>{selected.serviceName} · {selected.durationMinutes} min</dd></div><div><dt>Barbeiro</dt><dd>{selected.barberName}</dd></div><div><dt>Valor estimado</dt><dd>{formatCurrency(selected.priceCents)}</dd></div><div><dt>Origem</dt><dd>{selected.source === "public_booking" ? "Agendamento público" : "Agenda interna"}</dd></div></dl>
             <div className="drawer-note"><Clock3 size={18} /><span><strong>Lembretes automáticos</strong><small>24 horas e 2 horas antes do atendimento</small></span></div>
-            {!['cancelled','completed'].includes(selected.status) && <form className="reschedule-form" onSubmit={submitReschedule}><strong>Remarcar atendimento</strong><div className="form-grid"><label className="field"><span>Nova data</span><input name="date" type="date" defaultValue={selected.date} required /></label><label className="field"><span>Novo horário</span><input name="time" type="time" defaultValue={selected.time} required /></label></div>{rescheduleFeedback && <p className={`form-feedback ${rescheduleFeedback.ok ? "success" : "error"}`}>{rescheduleFeedback.message}</p>}<button className="button subtle" type="submit"><CalendarDays size={17} /> Remarcar</button></form>}
+            {!['cancelled','completed','no_show'].includes(selected.status) && !appointmentHasEnded(selected) && <form className="reschedule-form" onSubmit={submitReschedule}><strong>Remarcar atendimento</strong><div className="form-grid"><label className="field"><span>Nova data</span><input name="date" type="date" defaultValue={selected.date} required /></label><label className="field"><span>Novo horário</span><input name="time" type="time" defaultValue={selected.time} required /></label></div>{rescheduleFeedback && <p className={`form-feedback ${rescheduleFeedback.ok ? "success" : "error"}`}>{rescheduleFeedback.message}</p>}<button className="button subtle" type="submit"><CalendarDays size={17} /> Remarcar</button></form>}
+            {selected.status !== "completed" && selected.status !== "no_show" && selected.status !== "cancelled" && !appointmentHasEnded(selected) && <p className="drawer-hint">A conclusão fica disponível depois do horário final do atendimento.</p>}
+            {selected.status !== "no_show" && selected.status !== "cancelled" && appointmentHasEnded(selected) && <p className="drawer-hint">O sistema conclui este atendimento automaticamente. Se o cliente não compareceu, registre isso abaixo para manter o relatório correto.</p>}
+            {statusFeedback && <p className={`form-feedback ${statusFeedback.ok ? "success" : "error"}`} role="status">{statusFeedback.message}</p>}
             <div className="drawer-actions">
-              {selected.status === "pending" && <button className="button primary" onClick={() => updateAppointmentStatus(selected.id, "confirmed")}><Check size={17} /> Confirmar</button>}
-              {selected.status === "confirmed" && <button className="button primary" onClick={() => updateAppointmentStatus(selected.id, "completed")}><Check size={17} /> Concluir atendimento</button>}
-              {!['cancelled','completed'].includes(selected.status) && <button className="button danger" onClick={() => updateAppointmentStatus(selected.id, "cancelled")}><CircleX size={17} /> Cancelar</button>}
+              {selected.status === "pending" && <button className="button primary" onClick={() => void changeStatus("confirmed")}><Check size={17} /> Confirmar</button>}
+              {appointmentHasEnded(selected) && ["pending", "confirmed", "in_progress"].includes(selected.status) && <button className="button primary" onClick={() => void changeStatus("completed")}><Check size={17} /> Concluir atendimento</button>}
+              {appointmentHasEnded(selected) && ["pending", "confirmed", "in_progress", "completed"].includes(selected.status) && <button className="button danger" onClick={() => void changeStatus("no_show")}><CircleX size={17} /> Atendimento não realizado</button>}
+              {!['cancelled','completed','no_show'].includes(selected.status) && !appointmentHasEnded(selected) && <button className="button danger" onClick={() => void changeStatus("cancelled")}><CircleX size={17} /> Cancelar</button>}
             </div>
           </aside>
         </div>

@@ -47,7 +47,7 @@ type AppDataContextValue = {
   shopName: string;
   canManage: boolean;
   addAppointment: (appointment: NewAppointment) => Promise<{ ok: boolean; message: string }>;
-  updateAppointmentStatus: (id: string, status: Appointment["status"]) => Promise<void>;
+  updateAppointmentStatus: (id: string, status: Appointment["status"]) => Promise<{ ok: boolean; message: string }>;
   rescheduleAppointment: (id: string, date: string, time: string) => Promise<{ ok: boolean; message: string }>;
   addClient: (client: NewClient) => Promise<void>;
   addService: (service: NewService) => Promise<{ ok: boolean; message: string }>;
@@ -159,7 +159,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           const parts = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(startsAt);
           const part = (type: string) => parts.find((value) => value.type === type)?.value ?? "";
           const statusMap: Record<string, Appointment["status"]> = { cancelled_by_client: "cancelled", cancelled_by_shop: "cancelled" };
-          return { id: item.id, clientId: item.client_id, clientName: client?.name ?? "Cliente", barberId: item.barber_id, barberName: barber?.display_name ?? "Barbeiro", serviceId: service?.service_id ?? "", serviceName: service?.service_name ?? "Atendimento", date: `${part("year")}-${part("month")}-${part("day")}`, time: new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(startsAt), durationMinutes: service?.duration_minutes ?? Math.round((new Date(item.ends_at).getTime() - startsAt.getTime()) / 60000), priceCents: service?.price_cents ?? 0, status: statusMap[item.status] ?? item.status as Appointment["status"], source: item.source as Appointment["source"] };
+          return { id: item.id, clientId: item.client_id, clientName: client?.name ?? "Cliente", barberId: item.barber_id, barberName: barber?.display_name ?? "Barbeiro", serviceId: service?.service_id ?? "", serviceName: service?.service_name ?? "Atendimento", date: `${part("year")}-${part("month")}-${part("day")}`, time: new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(startsAt), endsAt: item.ends_at, durationMinutes: service?.duration_minutes ?? Math.round((new Date(item.ends_at).getTime() - startsAt.getTime()) / 60000), priceCents: service?.price_cents ?? 0, status: statusMap[item.status] ?? item.status as Appointment["status"], source: item.source as Appointment["source"] };
         }));
         setNotifications((remoteNotifications ?? []).map((item) => ({ id: item.id, type: item.type === "appointment_created" ? "booking" : item.type === "appointment_confirmed" ? "confirmation" : item.type === "appointment_cancelled" ? "cancellation" : item.type === "return_opportunity" ? "return" : "upcoming", title: item.title, body: item.body, time: new Date(item.created_at).toLocaleString("pt-BR"), read: Boolean(item.read_at), actionUrl: item.action_url ?? "/notificacoes" })));
         setLoadError("");
@@ -173,7 +173,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
     };
     void load();
-    return () => { cancelled = true; remoteTenantId.current = null; };
+    const refreshTimer = window.setInterval(() => { void load(); }, 60_000);
+    return () => { cancelled = true; window.clearInterval(refreshTimer); remoteTenantId.current = null; };
   }, [tenantSlug]);
 
   const currentBarberId = role === "barber" ? remoteBarberId : null;
@@ -220,10 +221,37 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       return { ok: true, message: "Agendamento criado e lembretes programados." };
     },
     updateAppointmentStatus: async (id, status) => {
-      if (!hasSupabaseEnv || !remoteTenantId.current) return;
-      const remoteStatus = status === "cancelled" ? "cancelled_by_shop" : status;
-      const { error } = await createClient().from("appointments").update({ status: remoteStatus }).eq("id", id).eq("barbershop_id", remoteTenantId.current);
-      if (!error) setAppointments((current) => current.map((item) => item.id === id ? { ...item, status } : item));
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const supabase = createClient();
+      let error: { code?: string; message?: string } | null = null;
+
+      if (status === "completed" || status === "no_show") {
+        const result = await supabase.rpc(
+          status === "completed" ? "complete_appointment" : "mark_appointment_no_show",
+          { target_barbershop_id: remoteTenantId.current, target_appointment_id: id },
+        );
+        error = result.error;
+      } else {
+        const remoteStatus = status === "cancelled" ? "cancelled_by_shop" : status;
+        const result = await supabase.from("appointments").update({ status: remoteStatus }).eq("id", id).eq("barbershop_id", remoteTenantId.current);
+        error = result.error;
+      }
+
+      if (error) {
+        if (error.code === "22023" || error.message?.includes("appointment_not_finished")) {
+          return { ok: false, message: "Esse atendimento só pode ser encerrado depois do horário final." };
+        }
+        if (error.message?.includes("appointment_already_closed")) {
+          return { ok: false, message: "Esse atendimento já foi encerrado e não pode ser reaberto." };
+        }
+        return { ok: false, message: "Não foi possível atualizar o atendimento. Tente novamente." };
+      }
+
+      setAppointments((current) => current.map((item) => item.id === id ? { ...item, status } : item));
+      return {
+        ok: true,
+        message: status === "completed" ? "Atendimento concluído." : status === "no_show" ? "Atendimento marcado como não realizado." : status === "cancelled" ? "Agendamento cancelado." : "Status atualizado.",
+      };
     },
     rescheduleAppointment: async (id, date, time) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
@@ -232,7 +260,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (hasSchedulingConflict(appointments.filter((item) => item.id !== id), { ...appointment, date, time })) return { ok: false, message: "Esse intervalo já está ocupado para o barbeiro ou para o cliente." };
       const { error } = await createClient().rpc("reschedule_appointment", { target_barbershop_id: remoteTenantId.current, target_appointment_id: id, local_starts_at: `${date}T${time}:00` });
       if (error) return { ok: false, message: error.code === "23P01" ? "Esse barbeiro já possui um atendimento nesse intervalo." : "Não foi possível remarcar o atendimento." };
-      setAppointments((current) => current.map((item) => item.id === id ? { ...item, date, time } : item));
+      // Recalculate the end time from the newly selected local slot until the
+      // next refresh brings the authoritative timezone-aware timestamp.
+      setAppointments((current) => current.map((item) => item.id === id ? { ...item, date, time, endsAt: undefined } : item));
       return { ok: true, message: "Atendimento remarcado e lembretes atualizados." };
     },
     addClient: async (client) => {

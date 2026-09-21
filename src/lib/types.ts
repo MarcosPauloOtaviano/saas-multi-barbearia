@@ -16,6 +16,8 @@ export type Appointment = {
   serviceName: string;
   date: string;
   time: string;
+  /** ISO timestamp returned by the database; used to guard lifecycle actions. */
+  endsAt?: string;
   durationMinutes: number;
   priceCents: number;
   status: AppointmentStatus;
