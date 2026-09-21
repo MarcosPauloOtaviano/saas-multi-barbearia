@@ -70,7 +70,7 @@ export function CustomerScrollStory() {
           <div className="customer-story__browser-bar"><span /><span /><span /><small>stilosampa.agenda</small></div>
           {scenes.map((scene, index) => <div className={`customer-story__screen customer-story__screen--${index + 1}`} key={scene.eyebrow} style={sceneStyle(progress, index)}>
             {index === 0 && <div className="story-screen__hero"><span>STILO<br />SAMPA</span><strong>WHERE<br />STYLE<br />LIVES</strong><small>agendamento oficial</small></div>}
-            {index === 1 && <div className="story-screen__services"><p>Escolha seu atendimento</p><strong>Serviços pensados<br />para o seu estilo.</strong><div><span>Corte clássico <b>45 min</b></span><span>Barba & acabamento <b>30 min</b></span><span>Combo Stilo <b>60 min</b></span></div></div>}
+            {index === 1 && <div className="story-screen__services"><p>Escolha seu atendimento</p><strong>Serviços pensados<br />para o seu estilo.</strong><div><span>Atendimento escolhido <b>à sua medida</b></span><span>Detalhes transparentes <b>sem surpresa</b></span><span>Experiência Stilo <b>do seu jeito</b></span></div></div>}
             {index === 2 && <div className="story-screen__team"><p>Seu profissional</p><strong>Quem vai cuidar<br />do seu próximo visual?</strong><div><span><i><UserRound /></i> Roberto <b>Disponível</b></span><span><i><CalendarCheck2 /></i> Escolha um horário <b>Agora</b></span></div></div>}
           </div>)}
           <div className="customer-story__grain" />
