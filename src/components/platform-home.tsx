@@ -24,8 +24,8 @@ export function PlatformHome() {
     function updateScene() {
       const hero = heroRef.current;
       if (!hero) return;
-      const range = Math.max(hero.offsetHeight * 0.72, 1);
-      const progress = Math.min(0.999, Math.max(0, window.scrollY / range));
+      const range = Math.max(hero.offsetHeight - window.innerHeight, 1);
+      const progress = Math.min(0.999, Math.max(0, (window.scrollY - hero.offsetTop) / range));
       setSceneProgress(progress);
     }
     updateScene();
@@ -46,41 +46,43 @@ export function PlatformHome() {
       </nav>
     </header>
 
-    <section className="cinematic-hero" ref={heroRef} aria-labelledby="platform-title">
-      <div className="cinematic-hero__media-stack" aria-hidden="true">
-        {scenes.map((item, index) => {
-          const center = index / (scenes.length - 1);
-          const distance = Math.abs(sceneProgress - center);
-          const opacity = Math.max(0, 1 - distance * 2.55);
-          const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
-          const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.5) * -3 : (sceneProgress - 1) * -2;
-          return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: sceneFocus[index] }}>
-            <Image src="/images/barberflow-home-hero.png" alt="" fill priority={index === 0} sizes="100vw" />
-          </div>;
-        })}
-      </div>
-      <div className="cinematic-hero__veil" />
-      <div className="cinematic-hero__grain" />
-
-      <div className="cinematic-hero__copy">
-        <p className="cinematic-kicker"><span /> A agenda que entra com você</p>
-        <h1 id="platform-title">Seu negócio<br /><em>começa na rua.</em></h1>
-        <p className="cinematic-hero__lead">O BarberFlow transforma o primeiro clique em uma experiência de verdade — da calçada ao corte, com tudo no lugar.</p>
-        <div className="cinematic-hero__actions">
-          <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer"><span>Quero cadastrar minha barbearia</span><ArrowUpRight /></a>
-          <Link className="cinematic-login" href="/admin">Já tenho acesso <ArrowRight /></Link>
+    <section className="cinematic-hero-shell" ref={heroRef}>
+      <div className="cinematic-hero" aria-labelledby="platform-title">
+        <div className="cinematic-hero__media-stack" aria-hidden="true">
+          {scenes.map((item, index) => {
+            const center = index / (scenes.length - 1);
+            const distance = Math.abs(sceneProgress - center);
+            const opacity = Math.max(0, 1 - distance * 2.55);
+            const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
+            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.5) * -3 : (sceneProgress - 1) * -2;
+            return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: sceneFocus[index] }}>
+              <Image src="/images/barberflow-home-hero.png" alt="" fill priority={index === 0} sizes="100vw" />
+            </div>;
+          })}
         </div>
-        <p className="cinematic-contact">Fale direto com a gente pelo WhatsApp <strong>+55 35 98844-0656</strong></p>
-      </div>
+        <div className="cinematic-hero__veil" />
+        <div className="cinematic-hero__grain" />
 
-      <div className="cinematic-story" aria-live="polite">
-        <div className="cinematic-story__line"><span style={{ transform: `scaleY(${Math.max(0.08, sceneProgress)})` }} /></div>
-        <div className="cinematic-story__copy"><p>{scene.eyebrow}</p><h2>{scene.title}</h2><span>{scene.copy}</span></div>
-        <div className="cinematic-story__steps" aria-label="Etapas da experiência">
-          {scenes.map((item, index) => <span className={sceneIndex === index ? "is-active" : ""} key={item.eyebrow}><i>{String(index + 1).padStart(2, "0")}</i>{item.eyebrow.replace(/^\d+ \/ /, "")}</span>)}
+        <div className="cinematic-hero__copy">
+          <p className="cinematic-kicker"><span /> A agenda que entra com você</p>
+          <h1 id="platform-title">Seu negócio<br /><em>começa na rua.</em></h1>
+          <p className="cinematic-hero__lead">O BarberFlow transforma o primeiro clique em uma experiência de verdade — da calçada ao corte, com tudo no lugar.</p>
+          <div className="cinematic-hero__actions">
+            <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer"><span>Quero cadastrar minha barbearia</span><ArrowUpRight /></a>
+            <Link className="cinematic-login" href="/admin">Já tenho acesso <ArrowRight /></Link>
+          </div>
+          <p className="cinematic-contact">Fale direto com a gente pelo WhatsApp <strong>+55 35 98844-0656</strong></p>
         </div>
+
+        <div className="cinematic-story" aria-live="polite">
+          <div className="cinematic-story__line"><span style={{ transform: `scaleY(${Math.max(0.08, sceneProgress)})` }} /></div>
+          <div className="cinematic-story__copy"><p>{scene.eyebrow}</p><h2>{scene.title}</h2><span>{scene.copy}</span></div>
+          <div className="cinematic-story__steps" aria-label="Etapas da experiência">
+            {scenes.map((item, index) => <span className={sceneIndex === index ? "is-active" : ""} key={item.eyebrow}><i>{String(index + 1).padStart(2, "0")}</i>{item.eyebrow.replace(/^\d+ \/ /, "")}</span>)}
+          </div>
+        </div>
+        <a className="cinematic-scroll" href="#como-funciona" aria-label="Rolar para ver como funciona"><span>Deslize para entrar</span><i /></a>
       </div>
-      <a className="cinematic-scroll" href="#como-funciona" aria-label="Rolar para ver como funciona"><span>Deslize para entrar</span><i /></a>
     </section>
 
     <section className="platform-story" id="como-funciona">
