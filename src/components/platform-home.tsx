@@ -18,6 +18,7 @@ export function PlatformHome() {
   const [sceneProgress, setSceneProgress] = useState(0);
   const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
   const scene = scenes[sceneIndex];
+  const sceneFocus = ["28% center", "52% center", "78% center"];
 
   useEffect(() => {
     function updateScene() {
@@ -46,8 +47,17 @@ export function PlatformHome() {
     </header>
 
     <section className="cinematic-hero" ref={heroRef} aria-labelledby="platform-title">
-      <div className="cinematic-hero__media" style={{ transform: `scale(${1.04 + sceneProgress * 0.08}) translateY(${sceneProgress * -2.5}%)` }}>
-        <Image src="/images/barberflow-home-hero.png" alt="Barbearia aberta para a rua, com um barbeiro atendendo um cliente" fill priority sizes="100vw" />
+      <div className="cinematic-hero__media-stack" aria-hidden="true">
+        {scenes.map((item, index) => {
+          const center = index / (scenes.length - 1);
+          const distance = Math.abs(sceneProgress - center);
+          const opacity = Math.max(0, 1 - distance * 2.55);
+          const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
+          const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.5) * -3 : (sceneProgress - 1) * -2;
+          return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: sceneFocus[index] }}>
+            <Image src="/images/barberflow-home-hero.png" alt="" fill priority={index === 0} sizes="100vw" />
+          </div>;
+        })}
       </div>
       <div className="cinematic-hero__veil" />
       <div className="cinematic-hero__grain" />
