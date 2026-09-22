@@ -16,7 +16,9 @@ export function DashboardHome() {
   const today = appointments.filter((item) => item.date === todayIso && !["cancelled", "no_show"].includes(item.status)).sort((a, b) => a.time.localeCompare(b.time));
   const confirmed = today.filter((item) => item.status === "confirmed").length;
   const pending = today.filter((item) => item.status === "pending").length;
-  const pendingAppointments = today.filter((item) => item.status === "pending").slice(0, 3);
+  const pendingRequests = appointments.filter((item) => item.status === "pending").sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+  const pendingAppointments = pendingRequests.slice(0, 3);
+  const requestDateLabel = (date: string, time: string) => date === todayIso ? `Hoje, ${time}` : `${date.split("-").reverse().slice(0, 2).join("/")} às ${time}`;
   const nowTime = new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
   const next = today.find(item => item.status === "in_progress" || (["pending","confirmed"].includes(item.status) && item.time >= nowTime));
   const returnClient = clients.find((client) => client.averageReturnDays);
@@ -47,10 +49,10 @@ export function DashboardHome() {
           <div className="progress-track"><span style={{ width: `${today.length ? (confirmed / today.length) * 100 : 0}%` }} /></div>
         </section>
 
-        <section className={`alerts-card requests-panel ${pending ? "has-pending" : ""}`} aria-labelledby="alertas-titulo" aria-live="polite">
-          <div className="section-heading compact"><div><p className="eyebrow">Precisa de atenção</p><h2 id="alertas-titulo">Novas solicitações</h2></div><span className="count-badge">{pending}</span></div>
-          {pendingAppointments.length ? pendingAppointments.map((item) => <Link className="alert-item request-item" href={`${base}/agenda?appointment=${item.id}`} key={item.id}><span className="alert-icon amber"><Clock3 size={19} /></span><span><strong>{item.clientName}</strong><small>{item.time} · {item.serviceName} · {item.barberName}</small></span><ChevronRight size={18} /></Link>) : <div className="requests-empty"><span className="alert-icon"><CircleCheckBig size={19} /></span><div><strong>Tudo em dia</strong><small>Nenhuma solicitação aguardando confirmação.</small></div></div>}
-          <Link className="alert-item requests-footer" href={`${base}/agenda?status=pending`}><span><strong>Ver agenda e responder</strong><small>{pending ? "Confirme ou ajuste os horários pendentes" : "Acompanhe todos os próximos horários"}</small></span><ChevronRight size={18} /></Link>
+        <section className={`alerts-card requests-panel ${pendingRequests.length ? "has-pending" : ""}`} aria-labelledby="alertas-titulo" aria-live="polite">
+          <div className="section-heading compact"><div><p className="eyebrow">Precisa de atenção</p><h2 id="alertas-titulo">Novas solicitações</h2></div><span className="count-badge">{pendingRequests.length}</span></div>
+          {pendingAppointments.length ? pendingAppointments.map((item) => <Link className="alert-item request-item" href={`${base}/agenda?appointment=${item.id}`} key={item.id}><span className="alert-icon amber"><Clock3 size={19} /></span><span><strong>{item.clientName}</strong><small>{requestDateLabel(item.date, item.time)} · {item.serviceName} · {item.barberName}</small></span><ChevronRight size={18} /></Link>) : <div className="requests-empty"><span className="alert-icon"><CircleCheckBig size={19} /></span><div><strong>Tudo em dia</strong><small>Nenhuma solicitação aguardando confirmação.</small></div></div>}
+          <Link className="alert-item requests-footer" href={`${base}/agenda?status=pending`}><span><strong>Ver agenda e responder</strong><small>{pendingRequests.length ? "Confirme ou ajuste os horários pendentes" : "Acompanhe todos os próximos horários"}</small></span><ChevronRight size={18} /></Link>
           {role !== "barber" && returnClient && <Link className="alert-item" href={`${base}/clientes?client=${returnClient.id}`}><span className="alert-icon blue"><UserRound size={19} /></span><span><strong>{returnClient.name} costuma voltar nesta semana</strong><small>Confira o histórico do cliente</small></span><ChevronRight size={18} /></Link>}
         </section>
 
