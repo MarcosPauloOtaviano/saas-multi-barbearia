@@ -539,6 +539,13 @@ a { color: inherit; }
 .customer-team-row small svg { width: 11px; fill: #d69c3b; color: #d69c3b; }
 .customer-team-row article > a { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; color: var(--pine); background: var(--paper); }
 .customer-team-row article > a svg { width: 16px; }
+.customer-contact { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 18px; align-items: center; padding: 20px; border: 1px solid #d7e6df; border-radius: 23px; background: linear-gradient(135deg, #eef7f3, #fbfcf8); }
+.customer-contact h2 { margin: 4px 0 8px; font-size: 1.14rem; letter-spacing: -.035em; }
+.customer-contact__intro { max-width: 310px; margin: 0; color: #56736d; font-size: .64rem; line-height: 1.5; }
+.customer-contact__links { display: grid; gap: 8px; }
+.customer-contact__links a { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; min-height: 46px; padding: 8px 10px; border: 1px solid rgb(67 116 103 / .14); border-radius: 13px; color: #225f53; background: rgb(255 255 255 / .72); text-decoration: none; }
+.customer-contact__links a > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: #2c6a5f; background: #e3f1ec; }
+.customer-contact__links a > span svg { width: 15px; }.customer-contact__links strong { font-size: .63rem; line-height: 1.35; }.customer-contact__links > a > svg { width: 14px; color: #72968d; }
 .customer-trust { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 15px; border: 1px solid #dfe8e3; border-radius: 18px; background: #fafcfb; }
 .customer-trust > svg:first-child { width: 22px; color: #397466; }.customer-trust > svg:last-child { width: 17px; color: #4b9a74; }
 .customer-trust div { display: grid; gap: 3px; }.customer-trust strong { font-size: 0.66rem; }.customer-trust p { margin: 0; color: var(--muted); font-size: 0.55rem; line-height: 1.4; }
@@ -701,7 +708,8 @@ a { color: inherit; }
   .customer-professional-hero__content > p:not(.eyebrow) { max-width: 360px; font-size: .72rem; }
   .customer-professional-hero__actions { display: grid; }.customer-professional-hero__actions .button { justify-content: center; }
   .customer-professional-hero__card { min-height: 245px; padding: 22px; border-radius: 22px; }.customer-professional-hero__card h2 { font-size: 1.9rem; }
-  .customer-section, .customer-return-card, .customer-trust { border-radius: 21px; }
+  .customer-contact { grid-template-columns: 1fr; gap: 14px; }
+  .customer-section, .customer-return-card, .customer-contact, .customer-trust { border-radius: 21px; }
 }
 
 @media (max-width: 365px) {

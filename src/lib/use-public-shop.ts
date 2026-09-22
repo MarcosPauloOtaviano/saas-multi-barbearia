@@ -10,6 +10,12 @@ export type PublicShop = {
   name: string;
   slug: string;
   timezone: string;
+  phone?: string | null;
+  address?: string | null;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  googleReviewsUrl?: string | null;
+  googleReviewCount?: number | null;
   logoUrl?: string | null;
   primaryColor?: string | null;
   accentColor?: string | null;
@@ -38,6 +44,12 @@ export function usePublicShop(slug?: string) {
           name: payload.shop.name,
           slug: payload.shop.slug,
           timezone: payload.shop.timezone ?? "America/Sao_Paulo",
+          phone: payload.shop.phone ?? null,
+          address: payload.shop.address ?? null,
+          websiteUrl: payload.shop.website_url ?? null,
+          instagramUrl: payload.shop.instagram_url ?? null,
+          googleReviewsUrl: payload.shop.google_reviews_url ?? null,
+          googleReviewCount: payload.shop.google_review_count ?? null,
           logoUrl: payload.shop.logo_url ?? null,
           primaryColor: payload.shop.primary_color ?? null,
           accentColor: payload.shop.accent_color ?? null,

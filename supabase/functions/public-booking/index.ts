@@ -18,7 +18,7 @@ Deno.serve(async (request) => {
 
     if (request.method === "GET") {
       const slug = new URL(request.url).searchParams.get("slug") ?? "";
-      const { data: shop, error: shopError } = await supabase.from("barbershops").select("id,name,slug,timezone,logo_url,primary_color,accent_color,booking_message").eq("slug", slug).eq("active", true).eq("public_booking_enabled", true).single();
+      const { data: shop, error: shopError } = await supabase.from("barbershops").select("id,name,slug,timezone,phone,address,website_url,instagram_url,google_reviews_url,google_review_count,logo_url,primary_color,accent_color,booking_message").eq("slug", slug).eq("active", true).eq("public_booking_enabled", true).single();
       if (shopError || !shop) return json(request, { error: "barbershop_not_found" }, 404);
       const [{ data: services, error: servicesError }, { data: barbers, error: barbersError }, { data: barberServices, error: barberServicesError }, { data: products, error: productsError }] = await Promise.all([
         supabase.from("services").select("id,name,description,duration_minutes,price_cents").eq("barbershop_id", shop.id).eq("active", true).order("name"),
