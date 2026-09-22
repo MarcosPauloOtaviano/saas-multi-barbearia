@@ -37,6 +37,7 @@ type AppDataContextValue = {
   saveShopSchedule: (schedule: ScheduleDay[], paused: boolean) => Promise<{ ok: boolean; message: string }>;
   saveProduct: (product: Omit<Product, "id"> & { id?: string }) => Promise<{ ok: boolean; message: string }>;
   setProductActive: (id: string, active: boolean) => Promise<{ ok: boolean; message: string }>;
+  deleteProduct: (id: string) => Promise<{ ok: boolean; message: string }>;
   barbers: Barber[];
   teamMembers: TeamMember[];
   workingHours: WorkingHour[];
@@ -327,6 +328,16 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if(error || !data) return {ok:false,message:'Não foi possível atualizar o produto.'};
       setProducts(current=>current.map(p=>p.id===id?{...p,active}:p));
       return {ok:true,message:active?'Produto ativado.':'Produto desativado.'};
+    },
+    deleteProduct: async (id) => {
+      if (!remoteTenantId.current) return unavailable;
+      const product = products.find((item) => item.id === id);
+      if (!product) return {ok:false,message:'Produto não encontrado.'};
+      if (product.active) return {ok:false,message:'Desative o produto antes de excluir.'};
+      const {data,error} = await createClient().from('products').delete().eq('id',id).eq('barbershop_id',remoteTenantId.current).eq('active',false).select('id').single();
+      if(error || !data) return {ok:false,message:'Não foi possível excluir o produto.'};
+      setProducts(current=>current.filter((item)=>item.id!==id));
+      return {ok:true,message:'Produto excluído.'};
     },
     addAppointment: async (input) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;

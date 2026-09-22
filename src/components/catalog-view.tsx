@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { Pencil, Plus, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
@@ -15,7 +15,7 @@ export function parsePrice(value: string) {
 
 type Draft = { id: string; name: string; description: string; priceCents: number; active: boolean; durationMinutes?: number };
 export function CatalogView({ kind }: { kind: "service" | "product" }) {
-  const { services, products, addService, updateService, toggleService, saveProduct, setProductActive } = useAppData();
+  const { services, products, addService, updateService, toggleService, saveProduct, setProductActive, deleteProduct } = useAppData();
   const isService = kind === "service";
   const singular = isService ? "serviço" : "produto";
   const [editing, setEditing] = useState<Draft | null>(null);
@@ -55,11 +55,18 @@ export function CatalogView({ kind }: { kind: "service" | "product" }) {
     catch { setFeedback({ ok: false, message: "Não foi possível atualizar. Tente novamente." }); }
     finally { pending.current = false; setBusy(false); }
   }
+  async function remove(item: Draft) {
+    if (isService || item.active || pending.current || !window.confirm(`Excluir o produto “${item.name}”?`)) return;
+    pending.current = true; setBusy(true); setFeedback(null);
+    try { setFeedback(await deleteProduct(item.id)); }
+    catch { setFeedback({ ok: false, message: "Não foi possível excluir. Tente novamente." }); }
+    finally { pending.current = false; setBusy(false); }
+  }
   return <>
     <PageTitle eyebrow="Catálogo" title={isService ? "Serviços" : "Produtos"} description={isService ? "O que seus clientes podem agendar." : "Produtos e preços da barbearia."} action={<button className="button primary" onClick={() => open()}><Plus size={18} />Novo {singular}</button>} />
     {feedback && !editing && <p role="status" className={`form-feedback ${feedback.ok ? "success" : "error"}`}>{feedback.message}</p>}
     {items.length ? <div className="services-grid">{items.map(item => <article className={`service-card ${!item.active ? "is-inactive" : ""}`} key={item.id}>
-      <div className="service-card__head"><h2>{item.name}</h2><button className="icon-button" onClick={() => open(item)} aria-label={`Editar ${item.name}`}><Pencil size={18} /></button></div>
+      <div className="service-card__head"><h2>{item.name}</h2><div className="service-card-actions"><button className="icon-button" onClick={() => open(item)} aria-label={`Editar ${item.name}`}><Pencil size={18} /></button>{!isService && !item.active && <button className="icon-button danger-action" disabled={busy} onClick={() => void remove(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={18} /></button>}</div></div>
       {item.description && <p>{item.description}</p>}
       <div className="service-meta">{isService && <span>{"durationMinutes" in item ? item.durationMinutes : ""} min</span>}<strong>{formatCurrency(item.priceCents)}</strong></div>
       <label className="switch-row"><span>{item.active ? "Ativo" : "Inativo"}</span><input type="checkbox" checked={item.active} disabled={busy} onChange={() => void toggle(item)} aria-label={`${item.name} ativo`} /><i /></label>

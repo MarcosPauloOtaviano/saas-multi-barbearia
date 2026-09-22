@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CatalogView, parsePrice } from "./catalog-view";
-const { model } = vi.hoisted(() => ({ model: { services: [] as unknown[], products: [] as unknown[], addService: vi.fn(), updateService: vi.fn(), toggleService: vi.fn(), saveProduct: vi.fn(), setProductActive: vi.fn() } }));
+const { model } = vi.hoisted(() => ({ model: { services: [] as unknown[], products: [] as unknown[], addService: vi.fn(), updateService: vi.fn(), toggleService: vi.fn(), saveProduct: vi.fn(), setProductActive: vi.fn(), deleteProduct: vi.fn() } }));
 vi.mock("@/components/app-data-provider",()=>({useAppData:()=>model}));
 vi.mock("@/components/app-shell",()=>({PageTitle:({title,action}:{title:string;action:React.ReactNode})=><div><h1>{title}</h1>{action}</div>}));
-beforeEach(()=>{vi.clearAllMocks();model.services=[];model.products=[];model.addService.mockResolvedValue({ok:true,message:"Serviço cadastrado."});model.updateService.mockResolvedValue({ok:true,message:"Serviço atualizado."});model.saveProduct.mockResolvedValue({ok:true,message:"Produto salvo."});});
-afterEach(cleanup);
+beforeEach(()=>{vi.clearAllMocks();model.services=[];model.products=[];model.addService.mockResolvedValue({ok:true,message:"Serviço cadastrado."});model.updateService.mockResolvedValue({ok:true,message:"Serviço atualizado."});model.saveProduct.mockResolvedValue({ok:true,message:"Produto salvo."});model.deleteProduct.mockResolvedValue({ok:true,message:"Produto excluído."});});
+afterEach(()=>{cleanup();vi.restoreAllMocks();});
 describe("Catálogo operacional",()=>{
   it("cadastra um serviço novo em vez de tentar editar um id vazio",async()=>{
     render(<CatalogView kind="service"/>);fireEvent.click(screen.getByRole("button",{name:"Novo serviço"}));
@@ -26,6 +26,12 @@ describe("Catálogo operacional",()=>{
   it("cadastra produto sem exigir duração",async()=>{
     render(<CatalogView kind="product"/>);fireEvent.click(screen.getByRole("button",{name:"Novo produto"}));fireEvent.change(screen.getByLabelText("Nome"),{target:{value:"Pomada"}});fireEvent.change(screen.getByLabelText("Preço (R$)"),{target:{value:"25,50"}});fireEvent.click(screen.getByRole("button",{name:"Cadastrar produto"}));
     await waitFor(()=>expect(model.saveProduct).toHaveBeenCalledWith(expect.objectContaining({name:"Pomada",priceCents:2550,id:undefined})));expect(model.addService).not.toHaveBeenCalled();
+  });
+  it("permite excluir somente produto inativo após confirmação",async()=>{
+    model.products=[{id:"active",name:"Ativo",description:"",priceCents:2000,active:true},{id:"inactive",name:"Inativo",description:"",priceCents:2500,active:false}];
+    vi.spyOn(window,"confirm").mockReturnValue(true);render(<CatalogView kind="product"/>);
+    expect(screen.queryByRole("button",{name:"Excluir Ativo"})).toBeNull();fireEvent.click(screen.getByRole("button",{name:"Excluir Inativo"}));
+    await waitFor(()=>expect(model.deleteProduct).toHaveBeenCalledWith("inactive"));
   });
   it("interpreta preços em reais sem transformar valor inválido em zero",()=>{expect(parsePrice("35,90")).toBe(3590);expect(parsePrice("0")).toBe(0);expect(parsePrice("-1")).toBeNull();expect(parsePrice("1.234,56")).toBeNull();expect(parsePrice("")).toBeNull();});
 });
