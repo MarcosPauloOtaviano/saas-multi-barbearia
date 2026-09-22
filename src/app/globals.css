@@ -93,14 +93,20 @@ button { color: inherit; }
 .mobile-create span { display: block; transform: translateY(-1px); font-size: 1.8rem; font-weight: 300; }
 
 @media (min-width: 760px) {
-  .app-frame { display: grid; grid-template-columns: 84px 1fr; }
-  .desktop-rail { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 24px 14px; color: white; background: #142724; }
-  .brand-mark { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; color: #ffe9df; background: var(--copper); transform: rotate(-3deg); }
-  .rail-nav { display: grid; gap: 12px; margin: auto 0; }
-  .rail-link { width: 45px; height: 45px; display: grid; place-items: center; border-radius: 14px; color: #79908a; }
-  .rail-link svg { width: 21px; }
+  .app-frame { display: grid; grid-template-columns: 232px 1fr; }
+  .desktop-rail { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; align-items: stretch; padding: 22px 15px; color: white; background: #142724; }
+  .rail-brand { display: flex; align-items: center; gap: 11px; padding: 2px 7px; }
+  .rail-brand > div { display: grid; gap: 3px; min-width: 0; }
+  .rail-brand strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
+  .rail-brand small { color: #8fa7a0; font-size: .58rem; }
+  .brand-mark { width: 44px; height: 44px; display: grid; place-items: center; flex: none; border-radius: 14px; color: #ffe9df; background: var(--copper); transform: rotate(-3deg); }
+  .rail-nav { display: grid; gap: 4px; margin: 35px 0 auto; }
+  .rail-link { position: relative; width: 100%; min-height: 43px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 13px; color: #8aa099; text-decoration: none; font-size: .7rem; font-weight: 700; }
+  .rail-link svg { width: 19px; flex: none; }
+  .rail-link:hover { color: #e3efeb; background: rgb(255 255 255 / .06); }
   .rail-link.is-active { color: #fff; background: rgb(255 255 255 / 0.1); }
   .avatar-button { width: 40px; height: 40px; border: 1px solid rgb(255 255 255 / 0.15); border-radius: 50%; color: #f5ddd2; background: #28423d; font-size: 0.7rem; font-weight: 800; }
+  .rail-profile { align-self: flex-start; }
   .workspace { padding: 46px 40px 60px; }
   .mobile-nav { display: none; }
   .dashboard-grid { grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr); }
@@ -353,6 +359,9 @@ a { color: inherit; }
   .team-access-row { grid-template-columns: auto 1fr auto; padding: 10px 0; }.team-access-row .role-chip { grid-column: 2; }.team-access-row .invite-state { grid-column: 2; }.team-access-row .icon-button { grid-column: 3; grid-row: 1; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }.kpi-card { display: grid; gap: 7px; }.reports-grid .full-span { grid-column: auto; }.barber-performance > div { grid-template-columns: auto 1fr auto; }.performance-track { display: none; }
   .notification-summary { order: -1; }.notification-summary > div { display: none; }
+  .notification-setup-card { grid-template-columns: auto 1fr; align-items: start; }
+  .notification-setup-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .notification-setup-actions .button { flex: 1; }
   .settings-grid { grid-template-columns: 1fr; }.danger-zone { display: grid; }
   .booking-card { padding: 21px 17px; }.barber-options { grid-template-columns: 1fr; }.time-options { grid-template-columns: repeat(3, 1fr); }.booking-progress small { display: none; }.success-ticket { grid-template-columns: 1fr; }.booking-header > div { display: none; }
   .login-page { grid-template-columns: 1fr; }.login-brand-panel { display: none; }.login-form-panel { padding: 28px 22px; }.mobile-login-brand { display: flex; }
@@ -843,9 +852,31 @@ a { color: inherit; }
 .photo-label input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; cursor: pointer; }
 .photo-label:focus-within { outline: 2px solid #183c36; outline-offset: 3px; }
 .profile-photo-row { display: flex; align-items: center; gap: 16px; }
+.profile-photo-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.photo-remove { min-height: 38px; padding-inline: 12px; }
 .operating-card h2 { margin: 24px 0 18px; }
 .management-shortcuts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
 .management-shortcuts a { border: 1px solid var(--line); background: white; border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600; font-size: .85rem; }
+.notification-setup-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 13px; margin: -8px 0 22px; padding: 14px 16px; border: 1px solid #ead6c9; border-radius: 18px; color: #633b2a; background: linear-gradient(135deg, #fff8f2, #fffdf9); box-shadow: 0 8px 24px rgb(32 47 43 / .04); }
+.notification-setup-icon { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 13px; color: var(--copper-dark); background: #f8e4d9; }
+.notification-setup-card strong { display: block; font-size: .75rem; }
+.notification-setup-card p { margin: 4px 0 0; color: #826455; font-size: .64rem; line-height: 1.4; }
+.notification-setup-actions { display: flex; align-items: center; gap: 7px; }
+.notification-setup-actions .text-button { font-size: .62rem; white-space: nowrap; }
+.requests-panel .count-badge { color: #975a15; background: var(--amber); }
+.requests-panel.has-pending { border-color: #ead8bd; box-shadow: 0 12px 34px rgb(164 93 14 / .09); }
+.request-item { padding: 13px 0; }
+.request-item strong { font-size: .8rem; }
+.request-item small { font-size: .64rem; }
+.requests-empty { display: flex; align-items: center; gap: 11px; padding: 18px 0; border-top: 1px solid var(--line); }
+.requests-empty .alert-icon { color: #257653; background: #e4f3e8; }
+.requests-empty div { display: grid; gap: 4px; }
+.requests-empty strong { font-size: .78rem; }
+.requests-empty small { color: var(--muted); font-size: .65rem; }
+.requests-footer { margin-top: 2px; padding-bottom: 0; }
+.requests-footer > span { display: grid; gap: 4px; }
+.requests-footer strong { color: var(--pine); font-size: .72rem; }
+.requests-footer small { color: var(--muted); font-size: .62rem; }
 .mobile-nav.operation-nav { grid-template-columns: repeat(4,1fr); }
 .mobile-nav.operation-nav button { display: grid; place-items: center; gap: 4px; padding: 6px; color: #b4c2bd; background: none; border: 0; font-size: .65rem; }
 .mobile-menu nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }

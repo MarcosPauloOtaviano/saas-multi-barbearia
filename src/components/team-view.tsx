@@ -10,7 +10,7 @@ import type { MemberRole } from "@/lib/types";
 
 const roles: Record<MemberRole,string> = {owner:"Proprietário",manager:"Gerente",barber:"Barbeiro",receptionist:"Recepcionista"};
 export function TeamView() {
-  const { barbers, teamMembers, appointments, addBarber, inviteTeamMember, updateBarberAvatar, setBarberActive, deleteBarber, role } = useAppData();
+  const { barbers, teamMembers, appointments, addBarber, inviteTeamMember, updateBarberAvatar, removeBarberAvatar, setBarberActive, deleteBarber, role } = useAppData();
   const base = useAdminBase();
   const [modal, setModal] = useState<"professional" | "access" | null>(null);
   const [target, setTarget] = useState("");
@@ -33,6 +33,11 @@ export function TeamView() {
     if(!file||busy)return;setBusy(true);
     try {setFeedback(await updateBarberAvatar(id,file));} catch {setFeedback({ok:false,message:"Não foi possível enviar a foto."});} finally {setBusy(false);}
   }
+  async function removePhoto(id: string, name: string) {
+    if (busy || !window.confirm(`Remover a foto de ${name}?`)) return;
+    setBusy(true); setFeedback(null);
+    try { setFeedback(await removeBarberAvatar(id)); } catch { setFeedback({ok:false,message:"Não foi possível remover a foto."}); } finally { setBusy(false); }
+  }
   async function toggleActive(id: string, active: boolean) {
     if (busy) return;
     setBusy(true); setFeedback(null);
@@ -48,7 +53,7 @@ export function TeamView() {
     <div className="team-grid">{barbers.map(barber=>{
       const member=teamMembers.find(m=>m.barberId===barber.id);
       return <article className={`team-card ${!barber.active ? "is-inactive" : ""}`} key={barber.id}><div className="team-card__head"><BarberAvatar barber={barber} className="team-avatar"/><div><h2>{barber.name}</h2><p>{member?.role==="owner"?"Proprietário e barbeiro":"Barbeiro"}</p></div></div>
-        <label className="button secondary photo-label"><Camera size={17}/>{busy?"Aguarde…":"Alterar foto"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label={`Alterar foto de ${barber.name}`} onChange={e=>{void photo(barber.id,e.target.files?.[0]);e.target.value="";}}/></label>
+        <div className="profile-photo-actions"><label className="button secondary photo-label"><Camera size={17}/>{busy?"Aguarde…":"Alterar foto"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label={`Alterar foto de ${barber.name}`} onChange={e=>{void photo(barber.id,e.target.files?.[0]);e.target.value="";}}/></label>{barber.avatarUrl && <button type="button" className="button danger photo-remove" disabled={busy} onClick={()=>void removePhoto(barber.id,barber.name)}><Trash2 size={16}/>Remover foto</button>}</div>
         <p className="table-hint">{barber.active ? `${appointments.filter(a=>a.barberId===barber.id&&a.date===today&&a.status!=="cancelled").length} agendamentos hoje` : "Profissional inativo; não aparece para novos agendamentos."}</p>
         <div className="team-card__footer"><Link href={`${base}/agenda?barber=${barber.id}`}>Ver agenda</Link><Link href={`${base}/horarios`}>Dias e horários</Link></div>
         <div className="team-card__controls"><button className="button subtle" disabled={busy || member?.role === "owner"} onClick={()=>void toggleActive(barber.id, barber.active)}><Power size={15}/>{barber.active?"Inativar":"Reativar"}</button>{!barber.active && role === "owner" && <button className="button subtle danger-action" disabled={busy} onClick={()=>void remove(barber.id, barber.name)}><Trash2 size={15}/>Excluir perfil</button>}</div>

@@ -1,13 +1,13 @@
 "use client";
 import { FormEvent, useState } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Trash2 } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { BarberAvatar } from "@/components/barber-avatar";
 import { useAppData } from "@/components/app-data-provider";
 import { createClient } from "@/lib/supabase/client";
 
 export function ProfileView() {
-  const { barbers, ownBarberId, currentUserName, role, updateBarberAvatar } = useAppData();
+  const { barbers, ownBarberId, currentUserName, role, updateBarberAvatar, removeBarberAvatar } = useAppData();
   const barber = barbers.find(b => b.id === ownBarberId);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
@@ -16,6 +16,13 @@ export function ProfileView() {
     setBusy(true);
     try { setFeedback(await updateBarberAvatar(barber.id, file)); }
     catch { setFeedback({ok:false,message:"Não foi possível enviar a foto. Tente novamente."}); }
+    finally { setBusy(false); }
+  }
+  async function removePhoto() {
+    if (!barber?.avatarUrl || busy || !window.confirm("Remover sua foto de perfil?")) return;
+    setBusy(true);
+    try { setFeedback(await removeBarberAvatar(barber.id)); }
+    catch { setFeedback({ok:false,message:"Não foi possível remover a foto. Tente novamente."}); }
     finally { setBusy(false); }
   }
   async function password(e: FormEvent<HTMLFormElement>) {
@@ -39,7 +46,7 @@ export function ProfileView() {
   }
   return <><PageTitle eyebrow="Sua conta" title="Meu perfil" description={currentUserName} />
     <section className="content-card operating-card">
-      {barber && <div className="profile-photo-row"><BarberAvatar barber={barber} className="team-avatar" /><label className="button secondary photo-label"><Camera size={18} />{busy ? "Aguarde…" : "Alterar minha foto"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label="Alterar minha foto" onChange={e => {void photo(e.target.files?.[0]);e.target.value="";}} /></label></div>}
+      {barber && <div className="profile-photo-row"><BarberAvatar barber={barber} className="team-avatar" /><div className="profile-photo-actions"><label className="button secondary photo-label"><Camera size={18} />{busy ? "Aguarde…" : "Alterar minha foto"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label="Alterar minha foto" onChange={e => {void photo(e.target.files?.[0]);e.target.value="";}} /></label>{barber.avatarUrl && <button type="button" className="button danger photo-remove" disabled={busy} onClick={() => void removePhoto()}><Trash2 size={17} />Remover foto</button>}</div></div>}
       <p className="table-hint">{role === "owner" ? "Proprietário: gestão da barbearia e atendimentos." : role === "barber" ? "Barbeiro: sua agenda e seu perfil, sem acesso à administração." : "Acesso individual à barbearia."}</p>
       <h2>Alterar senha</h2><form onSubmit={password} className="form-grid">
         <label className="field full"><span>Senha atual</span><input name="currentPassword" type="password" autoComplete="current-password" required /></label>

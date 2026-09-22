@@ -1,26 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, ChevronRight, CircleCheckBig, Clock3, Sparkles, UserRound } from "lucide-react";
+import { useState } from "react";
+import { BellRing, CalendarDays, ChevronRight, CircleCheckBig, Clock3, Sparkles, UserRound, Volume2 } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { useAdminBase } from "@/lib/admin-route";
 
 const statusLabel = { pending: "Aguardando", confirmed: "Confirmado", in_progress: "Em atendimento", completed: "Concluído", cancelled: "Cancelado", no_show: "Faltou" };
 
 export function DashboardHome() {
-  const { appointments, clients, role, currentUserName } = useAppData();
+  const { appointments, clients, role, currentUserName, notificationPermission, requestNotificationPermission } = useAppData();
   const base = useAdminBase();
+  const [notificationPromptDismissed, setNotificationPromptDismissed] = useState(false);
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const today = appointments.filter((item) => item.date === todayIso && !["cancelled", "no_show"].includes(item.status)).sort((a, b) => a.time.localeCompare(b.time));
   const confirmed = today.filter((item) => item.status === "confirmed").length;
   const pending = today.filter((item) => item.status === "pending").length;
+  const pendingAppointments = today.filter((item) => item.status === "pending").slice(0, 3);
   const nowTime = new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
   const next = today.find(item => item.status === "in_progress" || (["pending","confirmed"].includes(item.status) && item.time >= nowTime));
   const returnClient = clients.find((client) => client.averageReturnDays);
+  const canAskForNotifications = notificationPermission !== "unsupported" && notificationPermission !== "granted" && !notificationPromptDismissed;
 
   return (
     <>
       <div className="welcome-line"><div><p className="eyebrow">{role === "barber" ? "Minha rotina" : "Visão geral"}</p><h1>Olá, {currentUserName}.</h1></div><Link className="button primary small" href={`${base}/agenda?novo=1`}>+ Novo agendamento</Link></div>
+      {canAskForNotifications && <section className="notification-setup-card" aria-live="polite"><span className="notification-setup-icon"><BellRing size={21} /></span><div><strong>Quer ouvir novos pedidos na hora?</strong><p>Ative o aviso deste aparelho para receber som e notificação quando um cliente solicitar horário.</p></div><div className="notification-setup-actions"><button className="button primary small" onClick={() => void requestNotificationPermission()}><Volume2 size={15} />Ativar avisos</button><button className="text-button" onClick={() => setNotificationPromptDismissed(true)}>Agora não</button></div></section>}
       {(role==="owner"||role==="manager")&&<nav className="management-shortcuts" aria-label="Administração"><Link href={`${base}/servicos`}>Serviços</Link><Link href={`${base}/produtos`}>Produtos</Link><Link href={`${base}/equipe`}>Equipe</Link><Link href={`${base}/horarios`}>Dias e horários</Link></nav>}
       <div className="dashboard-grid">
         <section className="hero-card" aria-labelledby="proximo-cliente">
@@ -42,9 +47,10 @@ export function DashboardHome() {
           <div className="progress-track"><span style={{ width: `${today.length ? (confirmed / today.length) * 100 : 0}%` }} /></div>
         </section>
 
-        <section className="alerts-card" aria-labelledby="alertas-titulo">
-          <div className="section-heading compact"><div><p className="eyebrow">Precisa de atenção</p><h2 id="alertas-titulo">Avisos</h2></div><Link className="text-button" href={`${base}/notificacoes`}>Ver todos</Link></div>
-          <Link className="alert-item" href={`${base}/agenda?status=pending`}><span className="alert-icon amber"><Clock3 size={19} /></span><span><strong>{pending} {pending === 1 ? "cliente ainda não confirmou" : "clientes ainda não confirmaram"}</strong><small>{pending ? "Os lembretes automáticos já estão programados" : "Nenhuma pendência hoje"}</small></span><ChevronRight size={18} /></Link>
+        <section className={`alerts-card requests-panel ${pending ? "has-pending" : ""}`} aria-labelledby="alertas-titulo" aria-live="polite">
+          <div className="section-heading compact"><div><p className="eyebrow">Precisa de atenção</p><h2 id="alertas-titulo">Novas solicitações</h2></div><span className="count-badge">{pending}</span></div>
+          {pendingAppointments.length ? pendingAppointments.map((item) => <Link className="alert-item request-item" href={`${base}/agenda?appointment=${item.id}`} key={item.id}><span className="alert-icon amber"><Clock3 size={19} /></span><span><strong>{item.clientName}</strong><small>{item.time} · {item.serviceName} · {item.barberName}</small></span><ChevronRight size={18} /></Link>) : <div className="requests-empty"><span className="alert-icon"><CircleCheckBig size={19} /></span><div><strong>Tudo em dia</strong><small>Nenhuma solicitação aguardando confirmação.</small></div></div>}
+          <Link className="alert-item requests-footer" href={`${base}/agenda?status=pending`}><span><strong>Ver agenda e responder</strong><small>{pending ? "Confirme ou ajuste os horários pendentes" : "Acompanhe todos os próximos horários"}</small></span><ChevronRight size={18} /></Link>
           {role !== "barber" && returnClient && <Link className="alert-item" href={`${base}/clientes?client=${returnClient.id}`}><span className="alert-icon blue"><UserRound size={19} /></span><span><strong>{returnClient.name} costuma voltar nesta semana</strong><small>Confira o histórico do cliente</small></span><ChevronRight size={18} /></Link>}
         </section>
 

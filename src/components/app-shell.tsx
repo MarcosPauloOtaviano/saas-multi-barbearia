@@ -43,8 +43,8 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
 
   return <main className="app-frame">
     <aside className="desktop-rail desktop-rail--full" aria-label="Navegação principal">
-      <Link className="brand-mark" href={base} aria-label={`${shopName} — painel da equipe`}><Scissors size={23} strokeWidth={2.2} /></Link>
-      <nav className="rail-nav rail-nav--full">{allowedNavigation.map(({ path, label, icon: Icon }) => <Link className={`rail-link ${isCurrent(path) ? "is-active" : ""}`} href={`${base}${path}`} aria-label={label} title={label} key={path}><Icon />{label === "Avisos" && unread > 0 && <span className="rail-badge">{unread}</span>}</Link>)}</nav>
+      <div className="rail-brand"><Link className="brand-mark" href={base} aria-label={`${shopName} — painel da equipe`}><Scissors size={23} strokeWidth={2.2} /></Link><div><strong>{shopName}</strong><small>Painel da equipe</small></div></div>
+      <nav className="rail-nav rail-nav--full">{allowedNavigation.map(({ path, label, icon: Icon }) => <Link className={`rail-link ${isCurrent(path) ? "is-active" : ""}`} href={`${base}${path}`} aria-label={label} title={label} key={path}><Icon /><span>{label}</span>{label === "Avisos" && unread > 0 && <b className="rail-badge">{unread}</b>}</Link>)}</nav>
       <details className="profile-menu rail-profile"><summary className="avatar-button">{userInitials}</summary><div className="profile-popover"><strong>{currentUserName}</strong><span>{roleLabels[role]}</span><Link href="/admin/escolher-estabelecimento"><Store size={16} /> Trocar estabelecimento</Link>{(role === "owner" || role === "manager") && <Link href={`${base}/configuracoes`}><Settings size={16} /> Configurações</Link>}<form action={logoutAction}><button type="submit"><LogOut size={16} /> Sair</button></form></div></details>
     </aside>
 

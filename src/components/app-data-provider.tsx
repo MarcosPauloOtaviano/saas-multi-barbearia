@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { initialAppointments, initialBarbers, initialClients, initialNotifications, initialServices, initialTeamMembers } from "@/lib/initial-data";
 import { hasSchedulingConflict } from "@/lib/scheduling";
@@ -58,9 +58,13 @@ type AppDataContextValue = {
   deleteBarber: (barberId: string) => Promise<{ ok: boolean; message: string }>;
   saveBarberSchedule: (barberId: string, schedule: ScheduleEntry[]) => Promise<{ ok: boolean; message: string }>;
   updateBarberAvatar: (barberId: string, file: File) => Promise<{ ok: boolean; message: string }>;
+  removeBarberAvatar: (barberId: string) => Promise<{ ok: boolean; message: string }>;
   toggleService: (id: string) => Promise<{ ok: boolean; message: string }>;
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
+  notificationPermission: NotificationPermission | "unsupported";
+  notificationsEnabled: boolean;
+  requestNotificationPermission: () => Promise<{ ok: boolean; message: string }>;
 };
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -86,16 +90,98 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [shopName, setShopName] = useState("Estabelecimento");
   const [remoteBarberId, setRemoteBarberId] = useState<string | null>(null);
   const remoteTenantId = useRef<string | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const notificationEnabledRef = useRef(false);
+  const knownNotificationIds = useRef<Set<string> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!("Notification" in window)) {
+        setNotificationPermission("unsupported");
+        return;
+      }
+      const enabled = window.localStorage.getItem("barberflow-notifications-enabled") === "true" || window.Notification.permission === "granted";
+      setNotificationPermission(window.Notification.permission);
+      setNotificationsEnabled(enabled && window.Notification.permission === "granted");
+      notificationEnabledRef.current = enabled && window.Notification.permission === "granted";
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const playNotificationSound = useCallback(() => {
+    if (!notificationEnabledRef.current || typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = audioContextRef.current ?? new AudioContextClass();
+    audioContextRef.current = context;
+    if (context.state === "suspended") void context.resume();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(660, context.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.24);
+  }, []);
+
+  async function showNotificationOnDevice(title: string, body: string, actionUrl?: string) {
+    if (!notificationEnabledRef.current || typeof window === "undefined" || window.Notification?.permission !== "granted") return;
+    try {
+      const registration = await navigator.serviceWorker?.ready;
+      if (registration) {
+        await registration.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg", data: { url: actionUrl ?? "/admin" } });
+      } else {
+        new window.Notification(title, { body });
+      }
+    } catch {
+      // The in-page sound remains available even when the browser blocks a
+      // system notification (for example while the tab is foregrounded).
+    }
+  }
+
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return { ok: false, message: "Este aparelho não oferece avisos do navegador." };
+    }
+    const permission = await window.Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission !== "granted") {
+      notificationEnabledRef.current = false;
+      setNotificationsEnabled(false);
+      return { ok: false, message: permission === "denied" ? "Os avisos foram bloqueados. Libere as notificações nas configurações do navegador." : "Os avisos continuam desativados." };
+    }
+    notificationEnabledRef.current = true;
+    setNotificationsEnabled(true);
+    window.localStorage.setItem("barberflow-notifications-enabled", "true");
+    const AudioContextClass = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AudioContextClass) {
+      audioContextRef.current = audioContextRef.current ?? new AudioContextClass();
+      await audioContextRef.current.resume();
+      playNotificationSound();
+    }
+    return { ok: true, message: "Avisos ativados neste aparelho." };
+  }, [playNotificationSound]);
 
   useEffect(() => {
     remoteTenantId.current = null;
     if (!hasSupabaseEnv || !tenantSlug) return;
     let cancelled = false;
     const slug = decodeURIComponent(tenantSlug);
+    const supabase = createClient();
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+    let refreshInFlight = false;
 
     const load = async () => {
+      if (refreshInFlight) return;
+      refreshInFlight = true;
       try {
-        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('session unavailable');
         const { data: membership } = await supabase
@@ -115,6 +201,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         setRole(membership.role as MemberRole);
         setShopName(shopRecord?.name ?? "Barbearia");
         setBookingPaused(Boolean(shopRecord?.booking_paused));
+
+        if (!realtimeChannel) {
+          realtimeChannel = supabase
+            .channel(`barberflow:${tenantId}`)
+            .on("postgres_changes", { event: "*", schema: "public", table: "appointments", filter: `barbershop_id=eq.${tenantId}` }, () => { void load(); })
+            .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `barbershop_id=eq.${tenantId}` }, () => { void load(); })
+            .subscribe();
+        }
 
         const [{ data: profile }, { data: remoteServices }, { data: remoteBarbers }, { data: remoteClients }, { data: remoteAppointments }, { data: remoteNotifications }, { data: remoteMemberships }, { data: remoteWorkingHours }] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
@@ -161,7 +255,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           const statusMap: Record<string, Appointment["status"]> = { cancelled_by_client: "cancelled", cancelled_by_shop: "cancelled" };
           return { id: item.id, clientId: item.client_id, clientName: client?.name ?? "Cliente", barberId: item.barber_id, barberName: barber?.display_name ?? "Barbeiro", serviceId: service?.service_id ?? "", serviceName: service?.service_name ?? "Atendimento", date: `${part("year")}-${part("month")}-${part("day")}`, time: new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(startsAt), endsAt: item.ends_at, durationMinutes: service?.duration_minutes ?? Math.round((new Date(item.ends_at).getTime() - startsAt.getTime()) / 60000), priceCents: service?.price_cents ?? 0, status: statusMap[item.status] ?? item.status as Appointment["status"], source: item.source as Appointment["source"] };
         }));
-        setNotifications((remoteNotifications ?? []).map((item) => ({ id: item.id, type: item.type === "appointment_created" ? "booking" : item.type === "appointment_confirmed" ? "confirmation" : item.type === "appointment_cancelled" ? "cancellation" : item.type === "return_opportunity" ? "return" : "upcoming", title: item.title, body: item.body, time: new Date(item.created_at).toLocaleString("pt-BR"), read: Boolean(item.read_at), actionUrl: item.action_url ?? "/notificacoes" })));
+        const mappedNotifications = (remoteNotifications ?? []).map((item) => ({ id: item.id, type: item.type === "appointment_created" ? "booking" : item.type === "appointment_confirmed" ? "confirmation" : item.type === "appointment_cancelled" ? "cancellation" : item.type === "return_opportunity" ? "return" : "upcoming", title: item.title, body: item.body, time: new Date(item.created_at).toLocaleString("pt-BR"), read: Boolean(item.read_at), actionUrl: item.action_url ?? "/notificacoes" } as AppNotification));
+        const knownIds = knownNotificationIds.current;
+        if (knownIds) {
+          const freshNotifications = mappedNotifications.filter((item) => !knownIds.has(item.id) && !item.read);
+          freshNotifications.slice(0, 3).forEach((item) => {
+            playNotificationSound();
+            void showNotificationOnDevice(item.title, item.body, item.actionUrl);
+          });
+        }
+        knownNotificationIds.current = new Set(mappedNotifications.map((item) => item.id));
+        setNotifications(mappedNotifications);
         setLoadError("");
       } catch {
         if (cancelled) return;
@@ -169,13 +273,24 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         setLoadError("Não foi possível carregar os dados. Confira a conexão e tente novamente.");
         setAppointments([]); setClients([]); setServices([]); setNotifications([]); setBarbers([]); setTeamMembers([]); setWorkingHours([]);
       } finally {
+        refreshInFlight = false;
         if (!cancelled) setReadyTenant(tenantSlug);
       }
     };
     void load();
-    const refreshTimer = window.setInterval(() => { void load(); }, 60_000);
-    return () => { cancelled = true; window.clearInterval(refreshTimer); remoteTenantId.current = null; };
-  }, [tenantSlug]);
+    const refreshTimer = window.setInterval(() => { void load(); }, 8_000);
+    const refreshOnFocus = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", refreshOnFocus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshTimer);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+      if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+      remoteTenantId.current = null;
+      knownNotificationIds.current = null;
+    };
+  }, [playNotificationSound, tenantSlug]);
 
   const currentBarberId = role === "barber" ? remoteBarberId : null;
   const visibleAppointments = currentBarberId ? appointments.filter((item) => item.barberId === currentBarberId) : appointments;
@@ -188,6 +303,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     products, shopHours, bookingPaused, ownBarberId: remoteBarberId, loading: Boolean(tenantSlug && readyTenant !== tenantSlug), loadError,
     appointments: visibleAppointments, customerAppointments: appointments, clients: visibleClients, services, barbers, teamMembers, workingHours, notifications: visibleNotifications,
     role, currentBarberId, currentUserName, shopName, canManage: role === "owner" || role === "manager",
+    notificationPermission, notificationsEnabled, requestNotificationPermission,
     saveShopSchedule: async (schedule, paused) => {
       if (!remoteTenantId.current) return unavailable;
       const { error } = await createClient().rpc('save_operating_schedule',{ target_barbershop_id:remoteTenantId.current,target_barber_id:null,schedule:schedule.map(d=>({weekday:d.weekday,starts_at:d.startsAt,ends_at:d.endsAt,active:d.active})),paused });
@@ -374,6 +490,20 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setBarbers((current) => current.map((item) => item.id === barberId ? { ...item, avatarUrl: image.publicUrl } : item));
       return { ok: true, message: `Foto de ${barber.name} atualizada.` };
     },
+    removeBarberAvatar: async (barberId) => {
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const barber = barbers.find((item) => item.id === barberId);
+      if (!barber) return { ok: false, message: "Profissional não encontrado." };
+      const supabase = createClient();
+      const previousPath = barberMediaPath(barber.avatarUrl);
+      const error = role === "barber"
+        ? (await supabase.rpc("set_own_barber_photo", { target_barber_id: barberId, photo_url: null })).error
+        : (await supabase.from("barbers").update({ avatar_url: null }).eq("id", barberId).eq("barbershop_id", remoteTenantId.current).select("id").single()).error;
+      if (error) return { ok: false, message: "Não foi possível remover a foto." };
+      if (previousPath) await supabase.storage.from("barber-media").remove([previousPath]);
+      setBarbers((current) => current.map((item) => item.id === barberId ? { ...item, avatarUrl: undefined } : item));
+      return { ok: true, message: `Foto de ${barber.name} removida.` };
+    },
     toggleService: async (id) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
       const target = services.find((service) => service.id === id); if (!target) return unavailable;
@@ -392,7 +522,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await createClient().from("notifications").update({ read_at: new Date().toISOString() }).eq("barbershop_id", remoteTenantId.current).is("read_at", null);
       if (!error) setNotifications((current) => current.map((note) => ({ ...note, read: true })));
     },
-  }), [appointments, visibleAppointments, visibleClients, services, barbers, teamMembers, workingHours, visibleNotifications, role, currentBarberId, currentUserName, shopName, products,shopHours,bookingPaused,remoteBarberId,tenantSlug,readyTenant,loadError]);
+  }), [appointments, visibleAppointments, visibleClients, services, barbers, teamMembers, workingHours, visibleNotifications, role, currentBarberId, currentUserName, shopName, products,shopHours,bookingPaused,remoteBarberId,tenantSlug,readyTenant,loadError,notificationPermission,notificationsEnabled,requestNotificationPermission]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
