@@ -45,6 +45,22 @@ O cliente agenda sem conta obrigatória. A equipe usa contas individuais convida
 6. Publique `process-reminders`, `public-booking` e `appointment-response`.
 7. Agende `process-reminders` com Supabase Cron.
 
+### E-mails transacionais em produção
+
+O cadastro do horário continua válido mesmo quando o provedor de e-mail falha. A tela agora informa essa situação ao cliente e a função registra o motivo nos logs da Edge Function, em vez de afirmar que a mensagem foi enviada sem confirmação.
+
+No Resend, verifique o domínio usado no remetente e depois configure estes secrets no projeto Supabase (Edge Functions > Secrets):
+
+```text
+RESEND_API_KEY=...
+EMAIL_FROM=Stilo Sampa <agenda@dominio-verificado.com>
+APP_URL=https://barberflow.ddns.net
+IP_HASH_SALT=...
+CRON_SECRET=...
+```
+
+O job de lembretes precisa ser criado uma única vez no SQL Editor com `supabase/cron.example.sql`, trocando a URL pelo projeto real e preenchendo o segredo em `private.cron_secrets`. Sem esse job, os lembretes permanecem pendentes mesmo com o Resend configurado. Consulte o histórico em `cron.job_run_details` e as tentativas em `public.reminder_deliveries`.
+
 Depois de aplicar as migrations, vincule as credenciais reais de Mantena uma única vez, somente em um terminal seguro:
 
 ```bash

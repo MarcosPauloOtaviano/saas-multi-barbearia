@@ -1,15 +1,40 @@
+export class EmailDeliveryError extends Error {
+  constructor(public readonly code: "not_configured" | "provider_rejected" | "network_error", message: string) {
+    super(message);
+    this.name = "EmailDeliveryError";
+  }
+}
+
 export async function sendEmail(input: { to: string; subject: string; html: string }) {
-  const apiKey = Deno.env.get("RESEND_API_KEY");
-  const from = Deno.env.get("EMAIL_FROM");
-  if (!apiKey || !from) throw new Error("Email provider is not configured");
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [input.to], subject: input.subject, html: input.html }),
-  });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(`Email provider rejected the request (${response.status})`);
-  return payload as { id?: string };
+  const apiKey = Deno.env.get("RESEND_API_KEY")?.trim();
+  const from = Deno.env.get("EMAIL_FROM")?.trim();
+  if (!apiKey || !from) {
+    throw new EmailDeliveryError("not_configured", "Email provider is not configured");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [input.to], subject: input.subject, html: input.html }),
+    });
+  } catch {
+    throw new EmailDeliveryError("network_error", "Email provider could not be reached");
+  }
+
+  const rawPayload = await response.text();
+  let payload: { id?: string; message?: string; name?: string } = {};
+  try {
+    payload = rawPayload ? JSON.parse(rawPayload) as typeof payload : {};
+  } catch {
+    // Keep the provider response out of the client response when it is not JSON.
+  }
+  if (!response.ok) {
+    const reason = [payload.name, payload.message].filter(Boolean).join(": ");
+    throw new EmailDeliveryError("provider_rejected", `Email provider rejected the request (${response.status}${reason ? `: ${reason}` : ""})`);
+  }
+  return payload;
 }
 
 export function appointmentEmail(input: { shopName: string; clientName: string; serviceName: string; startsAt: string; token: string }) {

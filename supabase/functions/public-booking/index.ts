@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
-import { appointmentEmail, sendEmail } from "../_shared/email.ts";
+import { appointmentEmail, EmailDeliveryError, sendEmail } from "../_shared/email.ts";
 import { corsHeaders, json, serviceClientConfig } from "../_shared/http.ts";
 
 async function hashIp(value: string) {
@@ -127,16 +127,25 @@ Deno.serve(async (request) => {
 
     const result = data?.[0];
     await supabase.from("public_booking_attempts").insert({ barbershop_id: shop.id, ip_hash: ipHash, outcome: "accepted" });
+    let emailSent = false;
+    let emailStatus: "sent" | "not_configured" | "failed" = "failed";
     if (result?.response_token) {
       const { data: appointment } = await supabase.from("appointments").select("starts_at,clients(name,email),appointment_services(service_name)").eq("id", result.appointment_id).single();
       const client = Array.isArray(appointment?.clients) ? appointment?.clients[0] : appointment?.clients;
       const service = Array.isArray(appointment?.appointment_services) ? appointment?.appointment_services[0] : appointment?.appointment_services;
       if (client?.email) {
-        try { await sendEmail({ to: client.email, subject: `Agendamento recebido — ${shop.name}`, html: appointmentEmail({ shopName: shop.name, clientName: client.name, serviceName: service?.service_name ?? "atendimento", startsAt: new Date(appointment.starts_at).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }), token: result.response_token }) }); }
-        catch { /* Booking stays valid; delivery can be retried independently. */ }
+        try {
+          await sendEmail({ to: client.email, subject: `Agendamento recebido — ${shop.name}`, html: appointmentEmail({ shopName: shop.name, clientName: client.name, serviceName: service?.service_name ?? "atendimento", startsAt: new Date(appointment.starts_at).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }), token: result.response_token }) });
+          emailSent = true;
+          emailStatus = "sent";
+        } catch (error) {
+          emailStatus = error instanceof EmailDeliveryError && error.code === "not_configured" ? "not_configured" : "failed";
+          console.error("booking_confirmation_email_failed", { appointmentId: result.appointment_id, status: emailStatus, error: error instanceof Error ? error.message : "unknown_error" });
+          // The booking remains valid. The response tells the client to keep the confirmation screen when delivery fails.
+        }
       }
     }
-    return json(request, { appointmentId: result?.appointment_id }, 201);
+    return json(request, { appointmentId: result?.appointment_id, emailSent, emailStatus }, 201);
   } catch (error) {
     return json(request, { error: error instanceof Error ? error.message : "unexpected_error" }, 500);
   }
