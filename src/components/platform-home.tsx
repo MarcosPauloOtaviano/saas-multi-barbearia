@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, CalendarCheck2, Scissors, ShieldCheck, Store, UsersRound } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Scissors } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { eyebrow: "01 / Na rua", title: "A agenda começa antes da porta.", copy: "Uma experiência bonita para quem chega pelo celular e quer resolver o horário sem perder tempo.", image: "/images/barberflow-scene-01.png" },
-  { eyebrow: "02 / Na entrada", title: "O cliente encontra o seu lugar.", copy: "Cada estabelecimento tem seu próprio endereço, equipe, serviços e agenda — sem misturar operações.", image: "/images/barberflow-scene-02.png" },
-  { eyebrow: "03 / No corte", title: "E a equipe cuida do resto.", copy: "Horários, profissionais, clientes e rotina organizados em um painel simples para o dia a dia.", image: "/images/barberflow-scene-03.png" },
+  { eyebrow: "01 / Na rua", title: "Encontre seu horário.", copy: "Uma entrada simples para quem chega pelo celular.", image: "/images/barberflow-scene-01.png" },
+  { eyebrow: "02 / Na entrada", title: "Sua marca em destaque.", copy: "Cada estabelecimento tem seu próprio espaço.", image: "/images/barberflow-scene-02.png" },
+  { eyebrow: "03 / No corte", title: "A agenda no lugar.", copy: "Cliente e equipe enxergam só o que importa.", image: "/images/barberflow-scene-03.png" },
 ];
 
 export function PlatformHome() {
@@ -41,7 +41,6 @@ export function PlatformHome() {
     <header className="platform-nav">
       <Link className="platform-wordmark" href="/" aria-label="BarberFlow, página inicial"><span><Scissors /></span><strong>BarberFlow</strong></Link>
       <nav aria-label="Navegação principal">
-        <a href="#como-funciona">Como funciona</a>
         <Link className="platform-nav__login" href="/admin">Acessar painel <ArrowUpRight /></Link>
       </nav>
     </header>
@@ -64,9 +63,9 @@ export function PlatformHome() {
         <div className="cinematic-hero__grain" />
 
         <div className="cinematic-hero__copy">
-          <p className="cinematic-kicker"><span /> A agenda que entra com você</p>
-          <h1 id="platform-title">Seu negócio<br /><em>começa na rua.</em></h1>
-          <p className="cinematic-hero__lead">O BarberFlow transforma o primeiro clique em uma experiência de verdade — da calçada ao corte, com tudo no lugar.</p>
+          <p className="cinematic-kicker"><span /> BarberFlow · Agendamento simples</p>
+          <h1 id="platform-title">Sua agenda<br /><em>começa aqui.</em></h1>
+          <p className="cinematic-hero__lead">Uma página clara para o cliente agendar e para sua equipe organizar o dia.</p>
           <div className="cinematic-hero__actions">
             <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer"><span>Quero cadastrar minha barbearia</span><ArrowUpRight /></a>
             <Link className="cinematic-login" href="/admin">Já tenho acesso <ArrowRight /></Link>
@@ -81,24 +80,15 @@ export function PlatformHome() {
             {scenes.map((item, index) => <span className={sceneIndex === index ? "is-active" : ""} key={item.eyebrow}><i>{String(index + 1).padStart(2, "0")}</i>{item.eyebrow.replace(/^\d+ \/ /, "")}</span>)}
           </div>
         </div>
-        <a className="cinematic-scroll" href="#como-funciona" aria-label="Rolar para ver como funciona"><span>Deslize para entrar</span><i /></a>
+        <a className="cinematic-scroll" href="#contato" aria-label="Rolar para ver contato"><span>Deslize para entrar</span><i /></a>
       </div>
     </section>
 
-    <section className="platform-story" id="como-funciona">
-      <div className="platform-story__intro"><p className="eyebrow">Uma operação mais leve</p><h2>Seu cliente sente a diferença antes mesmo de sentar.</h2><p>O BarberFlow cuida do caminho inteiro: o cliente agenda sem senha, o barbeiro enxerga seu dia e o dono mantém o controle do estabelecimento.</p></div>
-      <div className="platform-story__grid">
-        <article><span><Store /></span><strong>Seu endereço, sua marca</strong><p>Uma página própria para cada barbearia, com serviços, profissionais, fotos e horários.</p></article>
-        <article><span><CalendarCheck2 /></span><strong>Agendamento sem atrito</strong><p>O cliente escolhe o serviço, o barbeiro e o melhor horário sem criar conta.</p></article>
-        <article><span><ShieldCheck /></span><strong>Equipe sob controle</strong><p>O painel separa permissões e agendas para cada pessoa da operação.</p></article>
-      </div>
-    </section>
-
-    <section className="platform-contact-cta">
-      <div><p className="eyebrow">Quer levar isso para o seu negócio?</p><h2>Vamos abrir a porta da sua barbearia.</h2><p>Chame no WhatsApp e conte como é o seu estabelecimento. A gente mostra o próximo passo.</p></div>
+    <section className="platform-contact-cta" id="contato">
+      <div><p className="eyebrow">Contato</p><h2>Quer cadastrar seu estabelecimento?</h2><p>Fale com o BarberFlow pelo WhatsApp: <strong>+55 35 98844-0656</strong>.</p></div>
       <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer">Falar no WhatsApp <ArrowUpRight /></a>
     </section>
 
-    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agenda para barbearias que querem ser lembradas.</small></div><div className="platform-footer__links"><Link href="/admin">Painel da equipe</Link><a href={whatsappHref} target="_blank" rel="noreferrer">Cadastrar estabelecimento</a></div><UsersRound /></footer>
+    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agendamento para barbearias.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Privacidade e LGPD</Link><Link href="/termos">Termos de uso</Link></div></footer>
   </main>;
 }

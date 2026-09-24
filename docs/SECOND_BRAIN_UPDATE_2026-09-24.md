@@ -38,6 +38,7 @@ Data: 24 de setembro de 2026
 - O mobile da home mantém a composição do desktop, com o mesmo enquadramento, contraste e hierarquia; somente tamanhos, espaçamentos e área de toque são responsivos.
 - A agenda pública usa a mesma linguagem visual da home e personaliza o título pelo estabelecimento retornado do slug, sem textos fixos da Stilo Sampa.
 - A home pública de cada estabelecimento usa a mesma animação cinematográfica da home do BarberFlow: cenas por rolagem, abertura full-bleed e textos de marca derivados do tenant. O fluxo de serviços, equipe, endereço e agendamento permanece isolado por slug.
+- A regra visual pública é “somente o que ajuda”: marca, agendamento, serviços, equipe, contato e privacidade/LGPD. Informações decorativas, métricas e blocos repetidos não devem voltar para as telas públicas.
 
 ## Infraestrutura e segurança
 

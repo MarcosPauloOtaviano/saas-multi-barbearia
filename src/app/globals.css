@@ -339,6 +339,11 @@ a { color: inherit; }
 .onboarding-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }.onboarding-trust span { display: grid; justify-items: center; gap: 5px; color: var(--muted); text-align: center; }.onboarding-trust svg { width: 17px; color: #4d756e; }.onboarding-trust small { font-size: 0.55rem; }
 .register-footer { margin: 16px 0 0; color: var(--muted); text-align: center; font-size: 0.65rem; }.register-footer a { color: var(--copper-dark); font-weight: 850; }.login-demo-link { width: 100%; margin-top: 12px; }
 
+/* Páginas legais: conteúdo curto, legível e sem distrações. */
+.legal-page { min-height: 100dvh; padding: 24px; color: var(--ink); background: radial-gradient(circle at top, rgb(200 111 69 / .12), transparent 28rem), var(--paper); }
+.legal-header { width: min(100%, 760px); display: flex; align-items: center; justify-content: space-between; margin: 0 auto 42px; font-size: .68rem; }.legal-header a { color: var(--muted); text-decoration: none; }.legal-header .legal-brand { color: var(--pine); font-size: .9rem; font-weight: 850; }
+.legal-card { width: min(100%, 760px); margin: 0 auto; padding: clamp(24px, 5vw, 48px); border: 1px solid var(--line); border-radius: 26px; background: white; box-shadow: var(--shadow); }.legal-card h1 { max-width: 620px; margin: 8px 0 16px; font-size: clamp(2rem, 6vw, 4rem); line-height: .95; letter-spacing: -.065em; }.legal-card h2 { margin: 28px 0 7px; font-size: .95rem; }.legal-card p { max-width: 600px; margin: 0 0 14px; color: var(--muted); font-size: .76rem; line-height: 1.65; }.legal-card a { color: var(--copper-dark); font-weight: 750; }.legal-card .legal-updated { margin-top: 32px; color: #9aa39f; font-size: .6rem; }
+
 @media (min-width: 900px) {
   .demo-badge, .header-profile { display: flex; }
   .role-preview { display: flex; }
@@ -693,8 +698,9 @@ a { color: inherit; }
 .customer-trust div { display: grid; gap: 3px; }.customer-trust strong { font-size: 0.66rem; }.customer-trust p { margin: 0; color: var(--muted); font-size: 0.55rem; line-height: 1.4; }
 .customer-footer { display: grid; gap: 12px; padding: 22px 6px 8px; color: var(--muted); }
 .customer-footer > div { display: flex; align-items: center; gap: 9px; }.customer-footer > div > svg { width: 18px; color: var(--copper); }.customer-footer span { display: grid; gap: 3px; }.customer-footer strong { color: var(--ink); font-size: 0.67rem; }.customer-footer small { font-size: 0.56rem; }
-.customer-footer p { display: flex; align-items: center; gap: 5px; margin: 0; font-size: 0.58rem; }.customer-footer p svg { width: 13px; }.customer-footer > a { color: var(--muted); font-size: 0.58rem; }
-.customer-nav { position: fixed; z-index: 40; right: 12px; bottom: 10px; left: 12px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; padding: 8px 7px max(8px, env(safe-area-inset-bottom)); border: 1px solid rgb(255 255 255 / 0.72); border-radius: 22px; background: rgb(255 255 255 / 0.95); box-shadow: 0 14px 40px rgb(28 46 41 / 0.18); backdrop-filter: blur(18px); }
+.customer-footer__links { display: flex; flex-wrap: wrap; gap: 14px; }
+.customer-footer__links a { color: var(--muted); font-size: 0.58rem; text-decoration: none; }
+.customer-nav { position: fixed; z-index: 40; right: 12px; bottom: 10px; left: 12px; display: grid; grid-template-columns: repeat(3, 1fr); align-items: end; padding: 8px 7px max(8px, env(safe-area-inset-bottom)); border: 1px solid rgb(255 255 255 / 0.72); border-radius: 22px; background: rgb(255 255 255 / 0.95); box-shadow: 0 14px 40px rgb(28 46 41 / 0.18); backdrop-filter: blur(18px); }
 .customer-nav > a:not(.customer-book) { min-height: 46px; display: grid; place-items: center; gap: 3px; color: #87918d; text-decoration: none; font-size: 0.55rem; font-weight: 700; }
 .customer-nav > a svg { width: 18px; }.customer-nav > a.is-active { color: var(--pine); }
 .customer-book { display: grid; justify-items: center; gap: 2px; color: var(--pine); text-decoration: none; font-size: 0.55rem; font-weight: 850; }
