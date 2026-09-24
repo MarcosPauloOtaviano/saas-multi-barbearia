@@ -37,6 +37,7 @@ Data: 24 de setembro de 2026
 - A home institucional usa três ilustrações próprias em sequência (rua, entrada e corte), com transição ligada à rolagem e fallback estático quando o dispositivo solicita redução de movimento.
 - O mobile da home mantém a composição do desktop, com o mesmo enquadramento, contraste e hierarquia; somente tamanhos, espaçamentos e área de toque são responsivos.
 - A agenda pública usa a mesma linguagem visual da home e personaliza o título pelo estabelecimento retornado do slug, sem textos fixos da Stilo Sampa.
+- A home pública de cada estabelecimento usa a mesma animação cinematográfica da home do BarberFlow: cenas por rolagem, abertura full-bleed e textos de marca derivados do tenant. O fluxo de serviços, equipe, endereço e agendamento permanece isolado por slug.
 
 ## Infraestrutura e segurança
 

@@ -20,6 +20,7 @@ A correção foi aplicada no front-end, na função pública e no PostgreSQL. Um
 - A home ganhou três cenas ilustradas próprias: rua, entrada e corte. A transição acompanha a rolagem; `prefers-reduced-motion` troca para uma cena estática e desliga animações.
 - A composição cinematográfica foi unificada no mobile: o texto, o contraste e o enquadramento seguem a mesma hierarquia do desktop, com ajustes apenas de escala e área segura para toque.
 - A agenda pública reutiliza a abertura visual da home sem prejudicar o formulário claro; o nome exibido é lido do estabelecimento atual, então cada slug apresenta sua própria marca.
+- A página pública de cada estabelecimento agora reutiliza a mesma narrativa cinematográfica da home institucional. As cenas, textos de abertura e contatos são renderizados com os dados do slug acessado; a agenda, serviços e equipe continuam sendo os recursos daquele tenant.
 
 ## Evidência de produção
 
