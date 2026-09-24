@@ -22,6 +22,7 @@ A correção foi aplicada no front-end, na função pública e no PostgreSQL. Um
 - A agenda pública reutiliza a abertura visual da home sem prejudicar o formulário claro; o nome exibido é lido do estabelecimento atual, então cada slug apresenta sua própria marca.
 - A página pública de cada estabelecimento agora reutiliza a mesma narrativa cinematográfica da home institucional. As cenas, textos de abertura e contatos são renderizados com os dados do slug acessado; a agenda, serviços e equipe continuam sendo os recursos daquele tenant.
 - A camada pública foi reduzida ao essencial: marca, agendamento, serviços, equipe, contato e links de privacidade/LGPD. Cards decorativos, estatísticas redundantes e chamadas repetidas foram removidos da home institucional e da página do estabelecimento.
+- Serviços e produtos públicos também foram enxugados: títulos diretos, valores, duração e ação de escolha; notas explicativas repetidas e atalhos que sugeriam conta foram retirados.
 
 ## Evidência de produção
 

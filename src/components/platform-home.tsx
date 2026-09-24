@@ -70,7 +70,6 @@ export function PlatformHome() {
             <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer"><span>Quero cadastrar minha barbearia</span><ArrowUpRight /></a>
             <Link className="cinematic-login" href="/admin">Já tenho acesso <ArrowRight /></Link>
           </div>
-          <p className="cinematic-contact">Fale direto com a gente pelo WhatsApp <strong>+55 35 98844-0656</strong></p>
         </div>
 
         <div className="cinematic-story" aria-live="polite">
