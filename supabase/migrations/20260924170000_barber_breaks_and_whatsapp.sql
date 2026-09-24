@@ -173,3 +173,31 @@ $$;
 
 revoke all on function private.slot_within_schedule(uuid, uuid, timestamptz, timestamptz) from public, anon, authenticated;
 
+-- A public booking must always carry a reachable WhatsApp number. The Edge
+-- Function validates it for a friendly client response; this trigger keeps
+-- direct service-role calls from bypassing the same rule.
+create or replace function private.enforce_public_booking_whatsapp()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.source::text = 'public_booking'
+     and not exists (
+       select 1
+       from public.clients c
+       where c.id = new.client_id
+         and length(regexp_replace(coalesce(c.phone, ''), '\D', '', 'g')) >= 10
+     ) then
+    raise exception 'whatsapp required' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.enforce_public_booking_whatsapp() from public, anon, authenticated;
+drop trigger if exists appointments_require_public_whatsapp on public.appointments;
+create trigger appointments_require_public_whatsapp
+before insert on public.appointments
+for each row execute function private.enforce_public_booking_whatsapp();
