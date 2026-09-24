@@ -35,6 +35,8 @@ Data: 24 de setembro de 2026
 - O painel inicial agora tem a Central de avisos com duas abas: “Novos agendamentos”, para pedidos pendentes com atalho direto para a agenda, e “Avisos”, para confirmações, cancelamentos e retornos. A atualização continua vindo do Realtime e da atualização periódica do painel.
 - Serviços podem ser combinados no mesmo agendamento. A duração e o valor são somados no cliente, na agenda interna e no banco; a disponibilidade só exibe barbeiros que atendem todos os itens escolhidos.
 - A home institucional usa três ilustrações próprias em sequência (rua, entrada e corte), com transição ligada à rolagem e fallback estático quando o dispositivo solicita redução de movimento.
+- O mobile da home mantém a composição do desktop, com o mesmo enquadramento, contraste e hierarquia; somente tamanhos, espaçamentos e área de toque são responsivos.
+- A agenda pública usa a mesma linguagem visual da home e personaliza o título pelo estabelecimento retornado do slug, sem textos fixos da Stilo Sampa.
 
 ## Infraestrutura e segurança
 

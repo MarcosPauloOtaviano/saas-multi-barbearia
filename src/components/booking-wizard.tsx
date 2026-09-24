@@ -116,7 +116,7 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
 
   return <main className="booking-page">
     <header className="booking-header"><Link className="booking-brand" href={`/b/${slug}`}><span><Scissors /></span><strong>{shop.name}</strong></Link><div><ShieldCheck size={15} /> Link oficial de agendamento</div></header>
-    <section className="booking-intro"><p className="eyebrow">Agendamento online</p><h1>Escolha seu melhor horário.</h1><p>{shop.bookingMessage || "Veja a disponibilidade antes de informar seus dados. Sem cadastro obrigatório."}</p></section>
+    <section className="booking-intro"><p className="eyebrow">{shop.name} · Agendamento oficial</p><h1>Escolha seu melhor horário.</h1><p>{shop.bookingMessage || "Veja a disponibilidade antes de informar seus dados. Sem cadastro obrigatório."}</p></section>
     {step <= 4 && <div className="booking-progress" aria-label={`Etapa ${step} de 4`}>{[1,2,3,4].map((item) => <span className={item <= step ? "is-active" : ""} key={item}><i>{item < step ? <Check size={13} /> : item}</i><small>{["Serviço","Profissional","Horário","Seus dados"][item-1]}</small></span>)}</div>}
     <section className="booking-card">
       {bookingError && <p className="form-feedback error">{bookingError}</p>}

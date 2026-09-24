@@ -18,6 +18,8 @@ A correção foi aplicada no front-end, na função pública e no PostgreSQL. Um
 - `appointment_services` recebe uma linha por serviço, preservando relatório, preço e duração individual.
 - A barreira de sobreposição do PostgreSQL e a idempotência por `requestId` continuam ativas.
 - A home ganhou três cenas ilustradas próprias: rua, entrada e corte. A transição acompanha a rolagem; `prefers-reduced-motion` troca para uma cena estática e desliga animações.
+- A composição cinematográfica foi unificada no mobile: o texto, o contraste e o enquadramento seguem a mesma hierarquia do desktop, com ajustes apenas de escala e área segura para toque.
+- A agenda pública reutiliza a abertura visual da home sem prejudicar o formulário claro; o nome exibido é lido do estabelecimento atual, então cada slug apresenta sua própria marca.
 
 ## Evidência de produção
 
