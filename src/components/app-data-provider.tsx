@@ -8,7 +8,7 @@ import type { AppNotification, Appointment, Barber, Client, MemberRole, Service,
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/client";
 
-type NewAppointment = Omit<Appointment, "id" | "status" | "source">;
+type NewAppointment = Omit<Appointment, "id" | "status" | "source"> & { serviceIds?: string[] };
 type NewClient = Omit<Client, "id" | "visits" | "lastVisit">;
 type NewService = Omit<Service, "id" | "active">;
 type EditableService = Omit<Service, "active">;
@@ -284,12 +284,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         setAppointments((remoteAppointments ?? []).map((item) => {
           const client = Array.isArray(item.clients) ? item.clients[0] : item.clients;
           const barber = Array.isArray(item.barbers) ? item.barbers[0] : item.barbers;
-          const service = Array.isArray(item.appointment_services) ? item.appointment_services[0] : item.appointment_services;
+          const appointmentServices = Array.isArray(item.appointment_services) ? item.appointment_services : item.appointment_services ? [item.appointment_services] : [];
+          const service = appointmentServices[0];
           const startsAt = new Date(item.starts_at);
           const parts = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(startsAt);
           const part = (type: string) => parts.find((value) => value.type === type)?.value ?? "";
           const statusMap: Record<string, Appointment["status"]> = { cancelled_by_client: "cancelled", cancelled_by_shop: "cancelled" };
-          return { id: item.id, clientId: item.client_id, clientName: client?.name ?? "Cliente", barberId: item.barber_id, barberName: barber?.display_name ?? "Barbeiro", serviceId: service?.service_id ?? "", serviceName: service?.service_name ?? "Atendimento", date: `${part("year")}-${part("month")}-${part("day")}`, time: new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(startsAt), endsAt: item.ends_at, durationMinutes: service?.duration_minutes ?? Math.round((new Date(item.ends_at).getTime() - startsAt.getTime()) / 60000), priceCents: service?.price_cents ?? 0, status: statusMap[item.status] ?? item.status as Appointment["status"], source: item.source as Appointment["source"] };
+          return { id: item.id, clientId: item.client_id, clientName: client?.name ?? "Cliente", barberId: item.barber_id, barberName: barber?.display_name ?? "Barbeiro", serviceId: service?.service_id ?? "", serviceIds: appointmentServices.map((entry) => entry.service_id).filter(Boolean), serviceName: appointmentServices.map((entry) => entry.service_name).filter(Boolean).join(" + ") || "Atendimento", date: `${part("year")}-${part("month")}-${part("day")}`, time: new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(startsAt), endsAt: item.ends_at, durationMinutes: appointmentServices.reduce((total, entry) => total + Number(entry.duration_minutes ?? 0), 0) || Math.round((new Date(item.ends_at).getTime() - startsAt.getTime()) / 60000), priceCents: appointmentServices.reduce((total, entry) => total + Number(entry.price_cents ?? 0), 0), status: statusMap[item.status] ?? item.status as Appointment["status"], source: item.source as Appointment["source"] };
         }));
         const mappedNotifications = (remoteNotifications ?? []).map((item) => ({ id: item.id, type: item.type === "appointment_created" ? "booking" : item.type === "appointment_confirmed" ? "confirmation" : item.type === "appointment_cancelled" ? "cancellation" : item.type === "return_opportunity" ? "return" : "upcoming", title: item.title, body: item.body, time: new Date(item.created_at).toLocaleString("pt-BR"), read: Boolean(item.read_at), actionUrl: item.action_url ?? "/notificacoes" } as AppNotification));
         const knownIds = knownNotificationIds.current;
@@ -377,7 +378,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     addAppointment: async (input) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
       if (hasSchedulingConflict(appointments, input)) return { ok: false, message: "Esse intervalo já está ocupado para o barbeiro ou para o cliente." };
-      const { data, error } = await createClient().rpc("create_internal_appointment", { target_barbershop_id: remoteTenantId.current, selected_service_id: input.serviceId, selected_barber_id: input.barberId, selected_client_id: input.clientId, local_starts_at: `${input.date}T${input.time}:00`, appointment_notes: null });
+      const serviceIds = input.serviceIds?.length ? input.serviceIds : [input.serviceId];
+      const { data, error } = await createClient().rpc("create_internal_appointment", { target_barbershop_id: remoteTenantId.current, selected_service_ids: serviceIds, selected_barber_id: input.barberId, selected_client_id: input.clientId, local_starts_at: `${input.date}T${input.time}:00`, appointment_notes: null });
       if (error) return { ok: false, message: error.code === "23P01" ? "Esse barbeiro já possui um atendimento nesse intervalo." : "Não foi possível criar o agendamento." };
       setAppointments((current) => [...current, { ...input, id: String(data), status: "pending", source: "internal" }]);
       return { ok: true, message: "Agendamento criado e lembretes programados." };

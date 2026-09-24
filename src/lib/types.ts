@@ -13,6 +13,8 @@ export type Appointment = {
   barberId: string;
   barberName: string;
   serviceId: string;
+  /** All services in the appointment, kept for combined-service bookings. */
+  serviceIds?: string[];
   serviceName: string;
   date: string;
   time: string;

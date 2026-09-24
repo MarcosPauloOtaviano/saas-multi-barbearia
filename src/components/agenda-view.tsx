@@ -67,18 +67,21 @@ export function AgendaView() {
     if (busy) return;
     const form = event.currentTarget;
     const data = new FormData(form);
-    const service = services.find((item) => item.id === data.get("service"));
+    const selectedServiceIds = data.getAll("serviceIds").map(String);
+    const selectedServices = services.filter((item) => selectedServiceIds.includes(item.id) && item.active);
     const barber = barbers.find((item) => item.id === data.get("barber"));
     const client = clients.find((item) => item.id === data.get("client"));
-    if (!service || !barber || !client) return;
+    if (!selectedServices.length || !barber || !client) return;
+    const totalDuration = selectedServices.reduce((total, service) => total + service.durationMinutes, 0);
+    const totalPrice = selectedServices.reduce((total, service) => total + service.priceCents, 0);
     setBusy(true);
     try {
     const result = await addAppointment({
       clientId: client.id, clientName: client.name,
       barberId: barber.id, barberName: barber.name,
-      serviceId: service.id, serviceName: service.name,
+      serviceId: selectedServices[0].id, serviceIds: selectedServices.map((service) => service.id), serviceName: selectedServices.map((service) => service.name).join(" + "),
       date: String(data.get("date")), time: String(data.get("time")),
-      durationMinutes: service.durationMinutes, priceCents: service.priceCents,
+      durationMinutes: totalDuration, priceCents: totalPrice,
     });
     setFeedback(result);
     if (result.ok) {
@@ -138,7 +141,7 @@ export function AgendaView() {
             <div className="modal-header"><div><p className="eyebrow">Agenda</p><h2 id="novo-agendamento-titulo">Novo agendamento</h2></div><button className="icon-button" onClick={() => setModalOpen(false)} aria-label="Fechar"><X /></button></div>
             <form className="form-grid" onSubmit={submitAppointment}>
               <label className="field full"><span>Cliente</span><select name="client" required defaultValue={searchParams.get("cliente") ?? ""}><option value="" disabled>Selecione o cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select></label>
-              <label className="field full"><span>Serviço</span><select name="service" required defaultValue=""><option value="" disabled>Selecione o serviço</option>{services.filter((service) => service.active).map((service) => <option value={service.id} key={service.id}>{service.name} · {service.durationMinutes} min · {formatCurrency(service.priceCents)}</option>)}</select></label>
+              <label className="field full"><span>Serviços <small>(selecione um ou mais)</small></span><select name="serviceIds" required multiple size={Math.min(5, Math.max(3, services.filter((service) => service.active).length))}>{services.filter((service) => service.active).map((service) => <option value={service.id} key={service.id}>{service.name} · {service.durationMinutes} min · {formatCurrency(service.priceCents)}</option>)}</select></label>
               <label className="field full"><span>Barbeiro</span><select name="barber" required defaultValue={currentBarberId ?? ""}><option value="" disabled>Selecione o barbeiro</option>{barbers.filter((barber) => barber.active && (role !== "barber" || barber.id === currentBarberId)).map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>
               <label className="field"><span>Data</span><input name="date" type="date" defaultValue={selectedDate} min={todayIso} required /></label>
               <label className="field"><span>Horário</span><input name="time" type="time" required /></label>

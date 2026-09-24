@@ -8,9 +8,9 @@ import { useEffect, useRef, useState } from "react";
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { eyebrow: "01 / Na rua", title: "A agenda começa antes da porta.", copy: "Uma experiência bonita para quem chega pelo celular e quer resolver o horário sem perder tempo." },
-  { eyebrow: "02 / Na entrada", title: "O cliente encontra o seu lugar.", copy: "Cada estabelecimento tem seu próprio endereço, equipe, serviços e agenda — sem misturar operações." },
-  { eyebrow: "03 / No corte", title: "E a equipe cuida do resto.", copy: "Horários, profissionais, clientes e rotina organizados em um painel simples para o dia a dia." },
+  { eyebrow: "01 / Na rua", title: "A agenda começa antes da porta.", copy: "Uma experiência bonita para quem chega pelo celular e quer resolver o horário sem perder tempo.", image: "/images/barberflow-scene-01.png" },
+  { eyebrow: "02 / Na entrada", title: "O cliente encontra o seu lugar.", copy: "Cada estabelecimento tem seu próprio endereço, equipe, serviços e agenda — sem misturar operações.", image: "/images/barberflow-scene-02.png" },
+  { eyebrow: "03 / No corte", title: "E a equipe cuida do resto.", copy: "Horários, profissionais, clientes e rotina organizados em um painel simples para o dia a dia.", image: "/images/barberflow-scene-03.png" },
 ];
 
 export function PlatformHome() {
@@ -56,7 +56,7 @@ export function PlatformHome() {
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
             const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.5) * -3 : (sceneProgress - 1) * -2;
             return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: sceneFocus[index] }}>
-              <Image src="/images/barberflow-home-hero.png" alt="" fill priority={index === 0} sizes="100vw" />
+              <Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" />
             </div>;
           })}
         </div>

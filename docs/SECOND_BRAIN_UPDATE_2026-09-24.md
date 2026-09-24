@@ -33,6 +33,8 @@ Data: 24 de setembro de 2026
 - Ações de clientes agora abrem e-mail, WhatsApp ou a agenda já com o cliente selecionado.
 - A remoção da foto do próprio perfil foi liberada com segurança.
 - O painel inicial agora tem a Central de avisos com duas abas: “Novos agendamentos”, para pedidos pendentes com atalho direto para a agenda, e “Avisos”, para confirmações, cancelamentos e retornos. A atualização continua vindo do Realtime e da atualização periódica do painel.
+- Serviços podem ser combinados no mesmo agendamento. A duração e o valor são somados no cliente, na agenda interna e no banco; a disponibilidade só exibe barbeiros que atendem todos os itens escolhidos.
+- A home institucional usa três ilustrações próprias em sequência (rua, entrada e corte), com transição ligada à rolagem e fallback estático quando o dispositivo solicita redução de movimento.
 
 ## Infraestrutura e segurança
 

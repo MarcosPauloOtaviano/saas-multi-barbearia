@@ -56,20 +56,31 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "availability") {
-      const serviceId = String(body.serviceId ?? "");
+      const serviceIds = Array.isArray(body.serviceIds)
+        ? body.serviceIds.map((value: unknown) => String(value)).filter(Boolean).slice(0, 8)
+        : body.serviceId ? [String(body.serviceId)] : [];
       const requestedBarberId = String(body.barberId ?? "");
       const requestedDate = String(body.date ?? "");
-      if (!serviceId || !requestedBarberId || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
+      if (!serviceIds.length || !requestedBarberId || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
         return json(request, { error: "invalid_payload" }, 400);
       }
 
       const { data: links, error: linksError } = await supabase
         .from("barber_services")
-        .select("barber_id")
+        .select("barber_id,service_id")
         .eq("barbershop_id", shop.id)
-        .eq("service_id", serviceId);
+        .in("service_id", serviceIds);
       if (linksError) throw linksError;
-      const eligibleIds = (links ?? []).map((link) => link.barber_id);
+      const servicesByBarber = new Map<string, Set<string>>();
+      for (const link of links ?? []) {
+        const assigned = servicesByBarber.get(link.barber_id) ?? new Set<string>();
+        assigned.add(link.service_id);
+        servicesByBarber.set(link.barber_id, assigned);
+      }
+      const eligibleIds = [...servicesByBarber.entries()]
+        .filter(([, assigned]) => serviceIds.every((serviceId) => assigned.has(serviceId)))
+        .map(([barberId]) => barberId);
+      if (!eligibleIds.length) return json(request, { slots: [] });
       if (!eligibleIds.length || (requestedBarberId !== "any" && !eligibleIds.includes(requestedBarberId))) {
         return json(request, { slots: [] });
       }
@@ -88,7 +99,7 @@ Deno.serve(async (request) => {
       const availability = await Promise.all((candidates ?? []).map(async (barber) => {
         const { data, error } = await supabase.rpc("get_public_availability", {
           target_slug: slug,
-          selected_service_id: serviceId,
+          selected_service_ids: serviceIds,
           selected_barber_id: barber.id,
           requested_date: requestedDate,
         });
@@ -105,13 +116,16 @@ Deno.serve(async (request) => {
       });
     }
 
-    if (body.action !== "book" || !body.serviceId || !body.barberId || !body.startsAt || !body.client?.name || !body.client?.email || !body.requestId) {
+    const serviceIds = Array.isArray(body.serviceIds)
+      ? body.serviceIds.map((value: unknown) => String(value)).filter(Boolean).slice(0, 8)
+      : body.serviceId ? [String(body.serviceId)] : [];
+    if (body.action !== "book" || !serviceIds.length || !body.barberId || !body.startsAt || !body.client?.name || !body.client?.email || !body.requestId) {
       return json(request, { error: "invalid_payload" }, 400);
     }
 
     const { data, error } = await supabase.rpc("create_public_booking", {
       target_slug: slug,
-      selected_service_id: body.serviceId,
+      selected_service_ids: serviceIds,
       selected_barber_id: body.barberId,
       requested_start: body.startsAt,
       client_name: String(body.client.name).slice(0, 120),
