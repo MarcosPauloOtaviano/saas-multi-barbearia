@@ -58,6 +58,7 @@ A primeira chamada combinada teve o custo de aquecimento da função; nas chamad
 - `pnpm build`: passou, 13 rotas geradas.
 - fluxo público no navegador: catálogo carregado, dois serviços selecionados, 40 minutos exibidos, Mantena/Roberto listados e Roberto escolhido explicitamente às 15:00;
 - payloads inválidos e slug inexistente: 400/404 esperados, sem gravação;
+- acesso direto sem sessão a `/admin/stilo-sampa` e `/admin/stilo-sampa/agenda`: redirecionamento HTTP 307 para `/admin/stilo-sampa/entrar`;
 - `pnpm exec supabase test db`: não executou localmente porque não há Postgres/Docker na máquina (`127.0.0.1:54322` recusou conexão). O arquivo `supabase/tests/tenant_isolation.test.sql` e o regression test continuam versionados para execução quando o ambiente local estiver disponível.
 
 ## Pendências externas, sem mascarar o estado
