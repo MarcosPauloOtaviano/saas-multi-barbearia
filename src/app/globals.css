@@ -110,11 +110,11 @@ button { color: inherit; }
   .workspace { padding: 46px 40px 60px; }
   .mobile-nav { display: none; }
   .dashboard-grid { grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr); }
-  .hero-card, .schedule-card { grid-row: span 2; }
-  .hero-card { min-height: 310px; display: flex; flex-direction: column; }
+  .requests-panel { grid-column: 1 / -1; grid-row: 1; }
+  .hero-card { grid-column: 1; grid-row: 2 / span 2; min-height: 310px; display: flex; flex-direction: column; }
+  .summary-card { grid-column: 2; grid-row: 2; }
   .primary-action { margin-top: auto; }
-  .schedule-card { grid-column: 1; }
-  .alerts-card { grid-column: 2; grid-row: 2 / span 2; }
+  .schedule-card { grid-column: 2; grid-row: 3; }
 }
 
 @media (min-width: 1080px) {
@@ -903,6 +903,8 @@ a { color: inherit; }
 .week-day { border: 0; cursor: pointer; font: inherit; color: inherit; }
 .rail-nav--full { overflow-y: auto; min-height: 0; }
 @media(max-width:759px) {
+  .dashboard-grid { display: flex; flex-direction: column; }
+  .requests-panel { order: -1; }
   .operating-card { padding: 18px 14px; }
   .operating-day { grid-template-columns: 1fr; }
   .day-times label { flex: 1; }
