@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BellRing, CalendarDays, ChevronRight, CircleCheckBig, Clock3, Sparkles, UserRound, Volume2 } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { useAdminBase } from "@/lib/admin-route";
@@ -26,6 +26,17 @@ export function DashboardHome() {
   const next = today.find(item => item.status === "in_progress" || (["pending","confirmed"].includes(item.status) && item.time >= nowTime));
   const returnClient = clients.find((client) => client.averageReturnDays);
   const canAskForNotifications = notificationPermission !== "unsupported" && notificationPermission !== "granted" && !notificationPromptDismissed;
+
+  // A new booking is shown first in the dashboard's “Novos agendamentos”
+  // panel. Once that panel is visible, the matching alert is no longer new in
+  // the Avisos tab either, keeping both counters consistent.
+  useEffect(() => {
+    if (requestPanel !== "appointments" || !pendingRequests.length) return;
+    const pendingIds = new Set(pendingRequests.map((appointment) => appointment.id));
+    notifications
+      .filter((note) => !note.read && [...pendingIds].some((id) => note.actionUrl.includes(`appointment=${id}`)))
+      .forEach((note) => void markNotificationRead(note.id));
+  }, [markNotificationRead, notifications, pendingRequests, requestPanel]);
 
   return (
     <>

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, Plus, Scissors, UserRound, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, MessageCircle, Plus, Scissors, UserRound, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
@@ -29,6 +29,7 @@ export function AgendaView() {
   const [nowMs, setNowMs] = useState(0);
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
+  const selectedClient = selected ? clients.find((client) => client.id === selected.clientId) : undefined;
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const [selectedDate, setSelectedDate] = useState(todayIso);
   function shiftDate(offset: number) { const date = new Date(`${selectedDate}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + offset); setSelectedDate(date.toISOString().slice(0,10)); }
@@ -163,6 +164,7 @@ export function AgendaView() {
             {selected.status !== "completed" && selected.status !== "no_show" && selected.status !== "cancelled" && !appointmentHasEnded(selected) && <p className="drawer-hint">A conclusão fica disponível depois do horário final do atendimento.</p>}
             {selected.status !== "no_show" && selected.status !== "cancelled" && appointmentHasEnded(selected) && <p className="drawer-hint">O sistema conclui este atendimento automaticamente. Se o cliente não compareceu, registre isso abaixo para manter o relatório correto.</p>}
             {statusFeedback && <p className={`form-feedback ${statusFeedback.ok ? "success" : "error"}`} role="status">{statusFeedback.message}</p>}
+            {selectedClient?.phone && <a className="button subtle drawer-whatsapp" href={`https://wa.me/${(selectedClient.phone.replace(/\D/g, "").startsWith("55") ? selectedClient.phone.replace(/\D/g, "") : `55${selectedClient.phone.replace(/\D/g, "")}`)}?text=${encodeURIComponent(`Olá, ${selected.clientName}! Aqui é da barbearia. Sobre seu atendimento de ${selected.date.split("-").reverse().join("/")} às ${selected.time}, precisamos falar com você.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Avisar pelo WhatsApp</a>}
             <div className="drawer-actions">
               {selected.status === "pending" && <button className="button primary" onClick={() => void changeStatus("confirmed")}><Check size={17} /> Confirmar</button>}
               {appointmentHasEnded(selected) && ["pending", "confirmed", "in_progress"].includes(selected.status) && <button className="button primary" onClick={() => void changeStatus("completed")}><Check size={17} /> Concluir atendimento</button>}

@@ -119,7 +119,9 @@ Deno.serve(async (request) => {
     const serviceIds = Array.isArray(body.serviceIds)
       ? body.serviceIds.map((value: unknown) => String(value)).filter(Boolean).slice(0, 8)
       : body.serviceId ? [String(body.serviceId)] : [];
-    if (body.action !== "book" || !serviceIds.length || !body.barberId || !body.startsAt || !body.client?.name || !body.client?.email || !body.requestId) {
+    const normalizedClientPhone = String(body.client?.phone ?? "").replace(/\D/g, "");
+    if (body.action !== "book" || !serviceIds.length || !body.barberId || !body.startsAt || !body.client?.name || !body.client?.email || normalizedClientPhone.length < 10 || !body.requestId) {
+      if (body.action === "book" && normalizedClientPhone.length < 10) return json(request, { error: "whatsapp_required" }, 400);
       return json(request, { error: "invalid_payload" }, 400);
     }
 
@@ -130,7 +132,7 @@ Deno.serve(async (request) => {
       requested_start: body.startsAt,
       client_name: String(body.client.name).slice(0, 120),
       client_email: String(body.client.email).slice(0, 254),
-      client_phone: String(body.client.phone ?? "").slice(0, 40),
+      client_phone: String(body.client.phone).slice(0, 40),
       request_id: String(body.requestId),
     });
     if (error) {

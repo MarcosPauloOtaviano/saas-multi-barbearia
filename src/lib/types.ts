@@ -48,7 +48,7 @@ export type Service = {
 };
 
 export type Product = Omit<Service, "durationMinutes">;
-export type ScheduleDay = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active">;
+export type ScheduleDay = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active" | "breakStart" | "breakEnd">;
 
 export type Barber = {
   id: string;
@@ -70,6 +70,9 @@ export type WorkingHour = {
   startsAt: string;
   endsAt: string;
   active: boolean;
+  /** Optional recurring break that blocks public and internal bookings. */
+  breakStart: string | null;
+  breakEnd: string | null;
 };
 
 export type TeamMember = {

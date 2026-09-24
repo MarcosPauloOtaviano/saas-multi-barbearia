@@ -14,7 +14,7 @@ type NewService = Omit<Service, "id" | "active">;
 type EditableService = Omit<Service, "active">;
 type NewBarber = Pick<Barber, "name" | "color">;
 type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string; barberId?: string; initialPassword: string };
-type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active">;
+type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active" | "breakStart" | "breakEnd">;
 
 function barberMediaPath(publicUrl?: string) {
   if (!publicUrl) return null;
@@ -230,13 +230,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           supabase.from("working_hours").select("id,barber_id,weekday,starts_at,ends_at,active").eq("barbershop_id", tenantId).order("weekday").order("starts_at"),
         ]);
 
+        // The extra read keeps an already deployed app compatible while the
+        // break-schedule migration is being applied to the production database.
+        const { data: remoteWorkingHoursWithBreaks } = await supabase.from("working_hours").select("id,barber_id,weekday,starts_at,ends_at,active,break_start,break_end").eq("barbershop_id", tenantId).order("weekday").order("starts_at");
+        const effectiveWorkingHours = remoteWorkingHoursWithBreaks ?? remoteWorkingHours ?? [];
         const [{ data: openingHours, error: hoursError }, { data: catalogProducts, error: productsError }] = await Promise.all([
           supabase.from('shop_hours').select('weekday,starts_at,ends_at,active').eq('barbershop_id',tenantId),
           supabase.from('products').select('id,name,description,price_cents,active').eq('barbershop_id',tenantId).order('name'),
         ]);
         if (hoursError || productsError || !remoteServices || !remoteBarbers || !remoteWorkingHours) throw new Error('data unavailable');
         if (cancelled) return;
-        setShopHours((openingHours ?? []).map((h) => ({ weekday:h.weekday, startsAt:String(h.starts_at).slice(0,5), endsAt:String(h.ends_at).slice(0,5), active:h.active })));
+        setShopHours((openingHours ?? []).map((h) => ({ weekday:h.weekday, startsAt:String(h.starts_at).slice(0,5), endsAt:String(h.ends_at).slice(0,5), active:h.active, breakStart: null, breakEnd: null })));
         setProducts((catalogProducts ?? []).map((p) => ({ id:p.id,name:p.name,description:p.description,priceCents:p.price_cents,active:p.active })));
 
         setCurrentUserName(profile?.full_name ?? user.email?.split("@")[0] ?? "Equipe");
@@ -252,7 +256,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           const barber = (remoteBarbers ?? []).find((candidate) => candidate.membership_id === item.id);
           return { id: item.id, userId: item.user_id, name: remoteProfiles?.find((candidate) => candidate.id === item.user_id)?.full_name ?? barber?.display_name ?? "Pessoa da equipe", email: item.user_id === user.id ? user.email ?? "E-mail protegido" : "E-mail protegido", role: item.role as MemberRole, status: item.status as TeamMember["status"], barberId: barber?.id, color: barber?.color };
         }));
-        setWorkingHours((remoteWorkingHours ?? []).map((item) => ({ id: item.id, barberId: item.barber_id, weekday: item.weekday, startsAt: String(item.starts_at).slice(0, 5), endsAt: String(item.ends_at).slice(0, 5), active: item.active })));
+        setWorkingHours(effectiveWorkingHours.map((item) => { const withBreak = item as typeof item & { break_start?: string | null; break_end?: string | null }; return { id: item.id, barberId: item.barber_id, weekday: item.weekday, startsAt: String(item.starts_at).slice(0, 5), endsAt: String(item.ends_at).slice(0, 5), active: item.active, breakStart: withBreak.break_start ? String(withBreak.break_start).slice(0, 5) : null, breakEnd: withBreak.break_end ? String(withBreak.break_end).slice(0, 5) : null }; }));
         const clientHistory = (remoteAppointments ?? []).reduce((history, appointment) => {
           const current = history.get(appointment.client_id) ?? [];
           current.push(appointment);
@@ -343,7 +347,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     notificationPermission, notificationsEnabled, requestNotificationPermission,
     saveShopSchedule: async (schedule, paused) => {
       if (!remoteTenantId.current) return unavailable;
-      const { error } = await createClient().rpc('save_operating_schedule',{ target_barbershop_id:remoteTenantId.current,target_barber_id:null,schedule:schedule.map(d=>({weekday:d.weekday,starts_at:d.startsAt,ends_at:d.endsAt,active:d.active})),paused });
+      const { error } = await createClient().rpc('save_operating_schedule',{ target_barbershop_id:remoteTenantId.current,target_barber_id:null,schedule:schedule.map(d=>({weekday:d.weekday,starts_at:d.startsAt,ends_at:d.endsAt,active:d.active,break_start:null,break_end:null})),paused });
       if(error) return {ok:false,message:'Não foi possível salvar. Confira os horários de abertura e fechamento.'};
       setShopHours(schedule); setBookingPaused(paused);
       return {ok:true,message:'Funcionamento salvo.'};
@@ -511,7 +515,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const { error } = await createClient().rpc("save_operating_schedule", {
         target_barbershop_id: remoteTenantId.current,
         target_barber_id: barberId,
-        schedule: schedule.map(({ weekday, startsAt, endsAt, active }) => ({ weekday, starts_at: startsAt, ends_at: endsAt, active })),
+        schedule: schedule.map(({ weekday, startsAt, endsAt, active, breakStart, breakEnd }) => ({ weekday, starts_at: startsAt, ends_at: endsAt, active, break_start: breakStart, break_end: breakEnd })),
       });
       if (error) return { ok: false, message: error.code === "42501" ? "Seu perfil não pode ajustar horários." : "Não foi possível salvar os horários." };
       setWorkingHours((current) => [...current.filter((item) => item.barberId !== barberId), ...schedule.map((item) => ({ ...item, barberId }))]);

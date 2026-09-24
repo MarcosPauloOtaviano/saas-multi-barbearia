@@ -88,6 +88,6 @@ export function PlatformHome() {
       <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer">Falar no WhatsApp <ArrowUpRight /></a>
     </section>
 
-    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agendamento para barbearias.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Privacidade e LGPD</Link><Link href="/termos">Termos de uso</Link></div></footer>
+    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agendamento para barbearias.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Política de privacidade</Link><Link href="/termos">Termos de uso</Link></div></footer>
   </main>;
 }
