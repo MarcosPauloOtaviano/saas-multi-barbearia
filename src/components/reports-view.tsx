@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CalendarRange, CircleDollarSign, Scissors, UserRoundCheck, UsersRound } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { useAppData } from "@/components/app-data-provider";
@@ -9,7 +10,10 @@ const weekdayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export function ReportsView() {
   const { appointments, clients, services, barbers } = useAppData();
-  const completed = appointments.filter((item) => item.status === "completed");
+  const [period, setPeriod] = useState<"month" | "all">("month");
+  const monthParts = new Intl.DateTimeFormat("en", { year: "numeric", month: "2-digit", timeZone: "America/Sao_Paulo" }).formatToParts(new Date());
+  const currentMonth = `${monthParts.find((part) => part.type === "year")?.value}-${monthParts.find((part) => part.type === "month")?.value}`;
+  const completed = appointments.filter((item) => item.status === "completed" && (period === "all" || item.date.startsWith(currentMonth)));
   const revenue = completed.reduce((sum, item) => sum + item.priceCents, 0);
   const newClients = clients.filter((client) => client.visits <= 1).length;
   const recurringClients = clients.filter((client) => client.visits > 1).length;
@@ -21,7 +25,7 @@ export function ReportsView() {
   const topBarberCount = Math.max(1, ...barberRanking.map((item) => item.jobs.length));
 
   return <>
-    <PageTitle eyebrow="Desempenho" title="Relatórios" description="Indicadores formados apenas por atendimentos reais." action={<button className="button subtle"><CalendarRange size={17} /> Este mês</button>} />
+    <PageTitle eyebrow="Desempenho" title="Relatórios" description="Indicadores formados apenas por atendimentos reais." action={<button className="button subtle" onClick={() => setPeriod((current) => current === "month" ? "all" : "month")}><CalendarRange size={17} /> {period === "month" ? "Este mês" : "Todo o período"}</button>} />
     <div className="kpi-grid">
       <article className="kpi-card"><span className="kpi-icon green"><Scissors /></span><div><small>Atendimentos concluídos</small><strong>{completed.length}</strong><p>Sem dados simulados</p></div></article>
       <article className="kpi-card"><span className="kpi-icon copper"><CircleDollarSign /></span><div><small>Faturamento realizado</small><strong>{formatCurrency(revenue)}</strong><p>Somente serviços concluídos</p></div></article>

@@ -132,20 +132,28 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     oscillator.stop(context.currentTime + 0.24);
   }, []);
 
-  async function showNotificationOnDevice(title: string, body: string, actionUrl?: string) {
+  const showNotificationOnDevice = useCallback(async (title: string, body: string, actionUrl?: string) => {
     if (!notificationEnabledRef.current || typeof window === "undefined" || window.Notification?.permission !== "granted") return;
+    const targetUrl = actionUrl?.startsWith("/admin/")
+      ? actionUrl
+      : tenantSlug && actionUrl?.startsWith("/")
+        ? `/admin/${tenantSlug}${actionUrl}`
+        : tenantSlug
+          ? `/admin/${tenantSlug}/notificacoes`
+          : "/admin";
     try {
       const registration = await navigator.serviceWorker?.ready;
       if (registration) {
-        await registration.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg", data: { url: actionUrl ?? "/admin" } });
+        await registration.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg", data: { url: targetUrl } });
       } else {
-        new window.Notification(title, { body });
+        const notification = new window.Notification(title, { body });
+        notification.onclick = () => { window.focus(); window.location.assign(targetUrl); };
       }
     } catch {
       // The in-page sound remains available even when the browser blocks a
       // system notification (for example while the tab is foregrounded).
     }
-  }
+  }, [tenantSlug]);
 
   const requestNotificationPermission = useCallback(async () => {
     if (typeof window === "undefined" || !("Notification" in window)) {
@@ -245,7 +253,34 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           return { id: item.id, userId: item.user_id, name: remoteProfiles?.find((candidate) => candidate.id === item.user_id)?.full_name ?? barber?.display_name ?? "Pessoa da equipe", email: item.user_id === user.id ? user.email ?? "E-mail protegido" : "E-mail protegido", role: item.role as MemberRole, status: item.status as TeamMember["status"], barberId: barber?.id, color: barber?.color };
         }));
         setWorkingHours((remoteWorkingHours ?? []).map((item) => ({ id: item.id, barberId: item.barber_id, weekday: item.weekday, startsAt: String(item.starts_at).slice(0, 5), endsAt: String(item.ends_at).slice(0, 5), active: item.active })));
-        setClients((remoteClients ?? []).map((item) => ({ id: item.id, name: item.name, phone: item.phone ?? "", email: item.email ?? "", visits: 0, lastVisit: "Sem histórico", notes: item.notes ?? "" })));
+        const clientHistory = (remoteAppointments ?? []).reduce((history, appointment) => {
+          const current = history.get(appointment.client_id) ?? [];
+          current.push(appointment);
+          history.set(appointment.client_id, current);
+          return history;
+        }, new Map<string, typeof remoteAppointments>());
+        setClients((remoteClients ?? []).map((item) => {
+          const history = clientHistory.get(item.id) ?? [];
+          const completedVisits = history
+            .filter((appointment) => appointment.status === "completed")
+            .sort((left, right) => new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime());
+          const upcoming = history
+            .filter((appointment) => ["pending", "confirmed", "in_progress"].includes(appointment.status) && new Date(appointment.starts_at) >= new Date())
+            .sort((left, right) => new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime())[0];
+          const returnIntervals = completedVisits.slice(1).map((visit, index) => Math.round((new Date(visit.starts_at).getTime() - new Date(completedVisits[index].starts_at).getTime()) / 86_400_000));
+          const averageReturnDays = returnIntervals.length ? Math.round(returnIntervals.reduce((sum, days) => sum + days, 0) / returnIntervals.length) : undefined;
+          return {
+            id: item.id,
+            name: item.name,
+            phone: item.phone ?? "",
+            email: item.email ?? "",
+            visits: completedVisits.length,
+            lastVisit: completedVisits.length ? new Date(completedVisits.at(-1)!.starts_at).toLocaleDateString("pt-BR", { timeZone: timezone }) : "Sem histórico",
+            nextVisit: upcoming ? new Date(upcoming.starts_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: timezone }) : undefined,
+            averageReturnDays,
+            notes: item.notes ?? "",
+          };
+        }));
         setAppointments((remoteAppointments ?? []).map((item) => {
           const client = Array.isArray(item.clients) ? item.clients[0] : item.clients;
           const barber = Array.isArray(item.barbers) ? item.barbers[0] : item.barbers;
@@ -291,7 +326,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       remoteTenantId.current = null;
       knownNotificationIds.current = null;
     };
-  }, [playNotificationSound, tenantSlug]);
+  }, [playNotificationSound, showNotificationOnDevice, tenantSlug]);
 
   const currentBarberId = role === "barber" ? remoteBarberId : null;
   const visibleAppointments = currentBarberId ? appointments.filter((item) => item.barberId === currentBarberId) : appointments;

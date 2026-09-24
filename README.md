@@ -1,6 +1,6 @@
-# Stilo Sampa — experiência do cliente + gestão multi-barbearia
+# BarberFlow — agendamento e gestão multiestabelecimento
 
-PWA mobile-first para clientes agendarem, acompanharem horários e voltarem à barbearia com facilidade, apoiada por uma área de gestão multi-tenant.
+PWA mobile-first para clientes agendarem com facilidade, apoiada por uma área de gestão isolada para cada estabelecimento.
 
 ## O que está incluído
 

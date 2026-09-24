@@ -36,24 +36,32 @@ export function usePublicShop(slug?: string) {
     if (!hasSupabaseEnv || !supabaseUrl || !supabasePublishableKey) {
       return;
     }
-    fetch(`${supabaseUrl}/functions/v1/public-booking?slug=${encodeURIComponent(slug)}`, { headers: { apikey: supabasePublishableKey } })
-      .then((response) => { if (!response.ok) throw new Error("catalog_unavailable"); return response.json(); })
-      .then((payload) => {
+    Promise.all([
+      fetch(`${supabaseUrl}/functions/v1/public-booking?slug=${encodeURIComponent(slug)}`, { headers: { apikey: supabasePublishableKey } })
+        .then((response) => { if (!response.ok) throw new Error("catalog_unavailable"); return response.json(); }),
+      fetch(`${supabaseUrl}/rest/v1/rpc/get_public_shop_profile`, {
+        method: "POST",
+        headers: { apikey: supabasePublishableKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ target_slug: slug }),
+      }).then((response) => response.ok ? response.json() : []),
+    ])
+      .then(([payload, profiles]) => {
+        const profile = profiles[0] ?? payload.shop;
         setShop({
-          id: payload.shop.id,
-          name: payload.shop.name,
-          slug: payload.shop.slug,
-          timezone: payload.shop.timezone ?? "America/Sao_Paulo",
-          phone: payload.shop.phone ?? null,
-          address: payload.shop.address ?? null,
-          websiteUrl: payload.shop.website_url ?? null,
-          instagramUrl: payload.shop.instagram_url ?? null,
-          googleReviewsUrl: payload.shop.google_reviews_url ?? null,
-          googleReviewCount: payload.shop.google_review_count ?? null,
-          logoUrl: payload.shop.logo_url ?? null,
-          primaryColor: payload.shop.primary_color ?? null,
-          accentColor: payload.shop.accent_color ?? null,
-          bookingMessage: payload.shop.booking_message ?? null,
+          id: profile.id,
+          name: profile.name,
+          slug: profile.slug,
+          timezone: profile.timezone ?? "America/Sao_Paulo",
+          phone: profile.phone ?? null,
+          address: profile.address ?? null,
+          websiteUrl: profile.website_url ?? null,
+          instagramUrl: profile.instagram_url ?? null,
+          googleReviewsUrl: profile.google_reviews_url ?? null,
+          googleReviewCount: profile.google_review_count ?? null,
+          logoUrl: profile.logo_url ?? null,
+          primaryColor: profile.primary_color ?? null,
+          accentColor: profile.accent_color ?? null,
+          bookingMessage: profile.booking_message ?? null,
         });
         setServices(payload.services.map((item: { id: string; name: string; description: string | null; duration_minutes: number; price_cents: number }) => ({ id: item.id, name: item.name, description: item.description ?? "", durationMinutes: item.duration_minutes, priceCents: item.price_cents, active: true })));
         setBarbers(payload.barbers.map((item: { id: string; display_name: string; color: string; avatar_url?: string | null }) => ({ id: item.id, name: item.display_name, avatarUrl: item.avatar_url ?? undefined, role: "Barbeiro", color: item.color, todayCount: 0, workingHours: "", active: true })));
