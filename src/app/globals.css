@@ -876,6 +876,12 @@ a { color: inherit; }
 .notification-setup-actions .text-button { font-size: .62rem; white-space: nowrap; }
 .requests-panel .count-badge { color: #975a15; background: var(--amber); }
 .requests-panel.has-pending { border-color: #ead8bd; box-shadow: 0 12px 34px rgb(164 93 14 / .09); }
+.dashboard-feed-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 2px 0 4px; padding: 4px; border-radius: 13px; background: #f1f4f1; }
+.dashboard-feed-tabs button { min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font-size: .67rem; font-weight: 800; cursor: pointer; }
+.dashboard-feed-tabs button b { min-width: 18px; padding: 2px 4px; border-radius: 999px; color: #69746f; background: #e2e8e3; font-size: .58rem; }
+.dashboard-feed-tabs button.is-active { color: var(--pine); background: white; box-shadow: 0 3px 8px rgb(27 54 46 / .08); }
+.dashboard-feed-tabs button.is-active b { color: white; background: var(--copper); }
+.request-item.is-unread { background: linear-gradient(90deg, rgb(231 238 249 / .38), transparent); }
 .request-item { padding: 13px 0; }
 .request-item strong { font-size: .8rem; }
 .request-item small { font-size: .64rem; }
