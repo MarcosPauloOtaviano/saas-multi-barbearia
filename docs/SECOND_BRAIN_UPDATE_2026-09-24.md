@@ -32,6 +32,7 @@ Data: 24 de setembro de 2026
 - Relatórios ganharam seleção funcional entre mês atual e todo o histórico.
 - Ações de clientes agora abrem e-mail, WhatsApp ou a agenda já com o cliente selecionado.
 - A remoção da foto do próprio perfil foi liberada com segurança.
+- O painel inicial agora tem a Central de avisos com duas abas: “Novos agendamentos”, para pedidos pendentes com atalho direto para a agenda, e “Avisos”, para confirmações, cancelamentos e retornos. A atualização continua vindo do Realtime e da atualização periódica do painel.
 
 ## Infraestrutura e segurança
 
