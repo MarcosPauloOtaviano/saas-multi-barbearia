@@ -28,6 +28,7 @@ Teste executado com Corte + Barba para 25/09/2026, barbeiro Roberto:
 - último horário: 17:15, respeitando 40 minutos até o fechamento às 18:00;
 - reserva de auditoria criada e removida depois do teste;
 - registro verificado: início 09:00, fim 09:40, duração 40 minutos, duas linhas em `appointment_services`, status pendente e origem pública;
+- repetição do mesmo `requestId` devolveu o mesmo `appointmentId` (sem duplicar atendimento); o registro temporário também foi removido;
 - o e-mail respondeu `not_configured`, sem impedir a reserva, como previsto quando o provedor ainda não está configurado.
 
 ## Latência observada
@@ -55,6 +56,8 @@ A primeira chamada combinada teve o custo de aquecimento da função; nas chamad
 - `pnpm test`: 2 arquivos, 13 testes, passou.
 - `pnpm lint`: passou.
 - `pnpm build`: passou, 13 rotas geradas.
+- fluxo público no navegador: catálogo carregado, dois serviços selecionados, 40 minutos exibidos, Mantena/Roberto listados e Roberto escolhido explicitamente às 15:00;
+- payloads inválidos e slug inexistente: 400/404 esperados, sem gravação;
 - `pnpm exec supabase test db`: não executou localmente porque não há Postgres/Docker na máquina (`127.0.0.1:54322` recusou conexão). O arquivo `supabase/tests/tenant_isolation.test.sql` e o regression test continuam versionados para execução quando o ambiente local estiver disponível.
 
 ## Pendências externas, sem mascarar o estado
