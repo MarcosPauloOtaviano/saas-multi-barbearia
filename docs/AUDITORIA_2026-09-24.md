@@ -47,7 +47,7 @@ A primeira chamada combinada teve o custo de aquecimento da função; nas chamad
 - O catálogo público retorna somente uma barbearia ativa pelo slug, serviços ativos, profissionais ativos e dados institucionais públicos.
 - RPCs combinadas foram criadas com validação de estabelecimento, barbeiro, serviços ativos e atribuições; a RPC pública de gravação só é executável pela função de serviço.
 - O isolamento por `barbershop_id`, políticas RLS, perfis de administrador/barbeiro e restrições de conflito permanecem no código e no banco.
-- Nenhum segundo estabelecimento foi criado durante o teste de produção; a verificação de multiestabelecimento foi feita por revisão das políticas e pela suíte SQL versionada para não contaminar dados reais.
+- Nenhum segundo estabelecimento permaneceu na produção: dois slugs e seus usuários/clientes de auditoria foram criados dentro de uma transação e revertidos; a verificação assertiva completa continua na suíte SQL versionada.
 - Os registros temporários da auditoria (cliente, agendamento, serviços-filhos, token e notificação) foram removidos após a validação.
 
 ## Suíte executada
