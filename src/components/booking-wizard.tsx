@@ -10,8 +10,25 @@ import { hasSupabaseEnv, supabasePublishableKey, supabaseUrl } from "@/lib/supab
 import type { Barber, Service } from "@/lib/types";
 
 type PublicBarber = Barber & { serviceIds?: string[] };
+type InitialCatalog = {
+  shop: { name: string; booking_message?: string | null; timezone?: string | null };
+  services: Array<{ id: string; name: string; description: string | null; duration_minutes: number; price_cents: number }>;
+  barbers: Array<{ id: string; display_name: string; color: string; avatar_url?: string | null; service_ids?: string[] }>;
+};
 type AvailableTime = { label: string; iso: string; barberId: string; barberName: string };
 type AvailableTimeGroup = { label: string; iso: string; barbers: { id: string; name: string }[] };
+
+function readCachedCatalog(slug: string): InitialCatalog | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(`barberflow:catalog:${slug}`);
+    if (!raw) return null;
+    const cached = JSON.parse(raw) as { savedAt?: number; payload?: InitialCatalog };
+    return cached.savedAt && cached.payload && Date.now() - cached.savedAt < 5 * 60_000 ? cached.payload : null;
+  } catch {
+    return null;
+  }
+}
 
 const bookingDates = Array.from({ length: 7 }, (_, offset) => {
   const date = new Date(Date.now() + offset * 86_400_000);
@@ -22,7 +39,7 @@ const bookingDates = Array.from({ length: 7 }, (_, offset) => {
   };
 });
 
-export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; initialServiceId?: string }) {
+export function BookingWizard({ slug, initialServiceId = "", initialCatalog = null }: { slug: string; initialServiceId?: string; initialCatalog?: InitialCatalog | null }) {
   const { services, barbers } = useAppData();
   const [step, setStep] = useState(1);
   const [serviceIds, setServiceIds] = useState<string[]>(initialServiceId ? [initialServiceId] : []);
@@ -31,15 +48,18 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
   const [selectedDate, setSelectedDate] = useState(bookingDates[0].iso);
   const [time, setTime] = useState("");
   const [slotIso, setSlotIso] = useState("");
-  const [publicServices, setPublicServices] = useState<Service[]>(services);
-  const [publicBarbers, setPublicBarbers] = useState<PublicBarber[]>(barbers);
+  const initialServices = initialCatalog?.services.map((item) => ({ id: item.id, name: item.name, description: item.description ?? "", durationMinutes: item.duration_minutes, priceCents: item.price_cents, active: true })) ?? services;
+  const initialBarbers = initialCatalog?.barbers.map((item) => ({ id: item.id, name: item.display_name, avatarUrl: item.avatar_url ?? undefined, role: "Barbeiro" as const, color: item.color, todayCount: 0, workingHours: "", active: true, serviceIds: item.service_ids ?? [] })) ?? barbers;
+  const [publicServices, setPublicServices] = useState<Service[]>(initialServices);
+  const [publicBarbers, setPublicBarbers] = useState<PublicBarber[]>(initialBarbers);
   const [availableTimes, setAvailableTimes] = useState<AvailableTime[]>([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [emailDelivered, setEmailDelivered] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(!initialCatalog && hasSupabaseEnv);
   const inferredShopName = slug.split("-").filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ") || "Estabelecimento";
-  const [shop, setShop] = useState({ name: inferredShopName, bookingMessage: "", timezone: "America/Sao_Paulo" });
+  const [shop, setShop] = useState({ name: initialCatalog?.shop.name ?? inferredShopName, bookingMessage: initialCatalog?.shop.booking_message ?? "", timezone: initialCatalog?.shop.timezone ?? "America/Sao_Paulo" });
   const requestId = useRef<string | null>(null);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
   const selectedServices = useMemo(() => publicServices.filter((service) => serviceIds.includes(service.id)), [publicServices, serviceIds]);
@@ -60,15 +80,31 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
   const selectedTimeGroup = timeGroups.find((group) => group.iso === slotIso);
 
   useEffect(() => {
+    if (initialCatalog) return;
+    const cached = readCachedCatalog(slug);
+    if (!cached) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setShop({ name: cached.shop.name, bookingMessage: cached.shop.booking_message ?? "", timezone: cached.shop.timezone ?? "America/Sao_Paulo" });
+      setPublicServices(cached.services.map((item) => ({ id: item.id, name: item.name, description: item.description ?? "", durationMinutes: item.duration_minutes, priceCents: item.price_cents, active: true })));
+      setPublicBarbers(cached.barbers.map((item) => ({ id: item.id, name: item.display_name, avatarUrl: item.avatar_url ?? undefined, role: "Barbeiro", color: item.color, todayCount: 0, workingHours: "", active: true, serviceIds: item.service_ids ?? [] })));
+      setCatalogLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [initialCatalog, slug]);
+
+  useEffect(() => {
     if (!hasSupabaseEnv || !supabaseUrl || !supabasePublishableKey) return;
     fetch(`${supabaseUrl}/functions/v1/public-booking?slug=${encodeURIComponent(slug)}`, { headers: { apikey: supabasePublishableKey } })
       .then((response) => { if (!response.ok) throw new Error(); return response.json(); })
       .then((payload) => {
+        try { window.sessionStorage.setItem(`barberflow:catalog:${slug}`, JSON.stringify({ savedAt: Date.now(), payload })); } catch { /* storage can be unavailable in private browsing */ }
         setShop({ name: payload.shop.name, bookingMessage: payload.shop.booking_message ?? "", timezone: payload.shop.timezone ?? "America/Sao_Paulo" });
         setPublicServices(payload.services.map((item: { id: string; name: string; description: string | null; duration_minutes: number; price_cents: number }) => ({ id: item.id, name: item.name, description: item.description ?? "", durationMinutes: item.duration_minutes, priceCents: item.price_cents, active: true })));
         setPublicBarbers(payload.barbers.map((item: { id: string; display_name: string; color: string; avatar_url?: string | null; service_ids?: string[] }) => ({ id: item.id, name: item.display_name, avatarUrl: item.avatar_url ?? undefined, role: "Barbeiro", color: item.color, todayCount: 0, workingHours: "", active: true, serviceIds: item.service_ids ?? [] })));
-      }).catch(() => setBookingError("A agenda pública está temporariamente indisponível."));
-  }, [slug]);
+      }).catch(() => { if (!initialCatalog) setBookingError("A agenda pública está temporariamente indisponível."); }).finally(() => setCatalogLoading(false));
+  }, [initialCatalog, slug]);
 
   useEffect(() => {
     if (!serviceIds.length || !barberId || !selectedServices.length) {
@@ -126,7 +162,7 @@ export function BookingWizard({ slug, initialServiceId = "" }: { slug: string; i
     {step <= 4 && <div className="booking-progress" aria-label={`Etapa ${step} de 4`}>{[1,2,3,4].map((item) => <span className={item <= step ? "is-active" : ""} key={item}><i>{item < step ? <Check size={13} /> : item}</i><small>{["Serviço","Profissional","Horário","Seus dados"][item-1]}</small></span>)}</div>}
     <section className="booking-card">
       {bookingError && <p className="form-feedback error">{bookingError}</p>}
-      {step === 1 && <div className="booking-step"><div className="booking-step__head"><div><p className="eyebrow">Etapa 1</p><h2>Qual serviço você quer?</h2><p className="booking-step-note">Você pode combinar serviços. O horário será reservado pelo tempo total.</p></div></div><div className="booking-options">{publicServices.filter((service) => service.active).map((service) => { const selected = serviceIds.includes(service.id); return <button type="button" className={selected ? "is-selected" : ""} onClick={() => { setServiceIds((current) => selected ? current.filter((id) => id !== service.id) : [...current, service.id]); setBarberId(""); setAssignedBarberId(""); setTime(""); setSlotIso(""); setBookingError(""); }} key={service.id}><span className="booking-option-icon"><Scissors /></span><span><strong>{service.name}</strong><small><Clock3 /> {service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b>{selected && <i><Check /></i>}</button>; })}</div>{selectedServices.length > 0 && <div className="booking-selection-summary"><strong>{selectedServices.map((service) => service.name).join(" + ")}</strong><span>{selectedDuration} min · {formatCurrency(selectedPrice)}</span></div>}{publicServices.length === 0 && <p className="booking-step-note">Os serviços serão publicados em breve. Volte novamente quando a agenda estiver aberta.</p>}<button className="button primary booking-next" disabled={!serviceIds.length} onClick={() => setStep(2)}>Continuar <ChevronRight /></button></div>}
+      {step === 1 && <div className="booking-step"><div className="booking-step__head"><div><p className="eyebrow">Etapa 1</p><h2>Qual serviço você quer?</h2><p className="booking-step-note">Você pode combinar serviços. O horário será reservado pelo tempo total.</p></div></div>{catalogLoading && !publicServices.length ? <div className="booking-catalog-loading" role="status" aria-live="polite"><span /><span /><span />Carregando serviços…</div> : <div className="booking-options">{publicServices.filter((service) => service.active).map((service) => { const selected = serviceIds.includes(service.id); return <button type="button" className={selected ? "is-selected" : ""} onClick={() => { setServiceIds((current) => selected ? current.filter((id) => id !== service.id) : [...current, service.id]); setBarberId(""); setAssignedBarberId(""); setTime(""); setSlotIso(""); setBookingError(""); }} key={service.id}><span className="booking-option-icon"><Scissors /></span><span><strong>{service.name}</strong><small><Clock3 /> {service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b>{selected && <i><Check /></i>}</button>; })}</div>}{selectedServices.length > 0 && <div className="booking-selection-summary"><strong>{selectedServices.map((service) => service.name).join(" + ")}</strong><span>{selectedDuration} min · {formatCurrency(selectedPrice)}</span></div>}{!catalogLoading && publicServices.length === 0 && <p className="booking-step-note">Nenhum serviço está disponível para agendamento no momento.</p>}<button className="button primary booking-next" disabled={!serviceIds.length || catalogLoading} onClick={() => setStep(2)}>Continuar <ChevronRight /></button></div>}
       {step === 2 && <div className="booking-step"><button className="booking-back" onClick={() => setStep(1)}><ArrowLeft /> Voltar</button><div className="booking-step__head"><div><p className="eyebrow">Etapa 2</p><h2>Com quem você prefere?</h2></div></div><div className="barber-options"><button className={barberId === "any" ? "is-selected" : ""} onClick={() => { setBarberId("any"); setAssignedBarberId(""); setTime(""); setSlotIso(""); }}><span className="public-avatar any"><UserRound /></span><span><strong>Escolher pelo horário</strong><small>Depois escolha entre todos que estiverem livres</small></span></button>{eligibleBarbers.map((barber) => <button className={barberId === barber.id ? "is-selected" : ""} onClick={() => { setBarberId(barber.id); setAssignedBarberId(barber.id); setTime(""); setSlotIso(""); }} key={barber.id}><BarberAvatar barber={barber} className="public-avatar" sizes="42px" /><span><strong>{barber.name}</strong><small>{barber.role}</small></span></button>)}</div><button className="button primary booking-next" disabled={!barberId} onClick={() => setStep(3)}>Continuar <ChevronRight /></button></div>}
       {step === 3 && <div className="booking-step"><button className="booking-back" onClick={() => setStep(2)}><ArrowLeft /> Voltar</button><div className="booking-step__head"><div><p className="eyebrow">Etapa 3</p><h2>Escolha data e horário</h2>{barberId === "any" && <p className="booking-step-note">Escolha um horário e mostraremos todos os profissionais livres nele.</p>}</div></div><div className="date-options">{bookingDates.map((day) => <button className={selectedDate === day.iso ? "is-selected" : ""} onClick={() => { setSelectedDate(day.iso); setTime(""); setSlotIso(""); setAssignedBarberId(barberId !== "any" ? barberId : ""); }} key={day.iso}><small>{day.weekday}</small><strong>{day.day}</strong></button>)}</div><p className="time-section-title"><Clock3 /> Horários disponíveis</p>{availabilityLoading ? <p className="booking-step-note">Consultando a agenda da equipe…</p> : timeGroups.length ? <div className="time-options">{timeGroups.map((group) => <button aria-label={`${group.label}, ${group.barbers.length} ${group.barbers.length === 1 ? "profissional livre" : "profissionais livres"}`} className={slotIso === group.iso ? "is-selected" : ""} onClick={() => { setTime(group.label); setSlotIso(group.iso); setAssignedBarberId(barberId !== "any" ? barberId : group.barbers.length === 1 ? group.barbers[0].id : ""); setBookingError(""); }} key={group.iso}><strong>{group.label}</strong>{barberId === "any" && <small>{group.barbers.length} {group.barbers.length === 1 ? "profissional" : "profissionais"}</small>}</button>)}</div> : <p className="booking-step-note">Não há horários livres nesta data. Escolha outro dia ou profissional.</p>}{barberId === "any" && selectedTimeGroup && <section className="slot-barber-picker" aria-labelledby="slot-barber-title"><div><p className="eyebrow">Disponíveis às {selectedTimeGroup.label}</p><h3 id="slot-barber-title">Com quem você quer cortar?</h3></div><div>{selectedTimeGroup.barbers.map((candidate) => { const barber = publicBarbers.find((item) => item.id === candidate.id); if (!barber) return null; return <button className={assignedBarberId === barber.id ? "is-selected" : ""} onClick={() => setAssignedBarberId(barber.id)} key={barber.id}><BarberAvatar barber={barber} className="public-avatar" sizes="42px" /><span><strong>{barber.name}</strong><small>{assignedBarberId === barber.id ? "Selecionado" : "Livre neste horário"}</small></span>{assignedBarberId === barber.id && <CheckCircle2 />}</button>; })}</div></section>}{barberId === "any" && time && selectedBarber && <p className="booking-step-note"><CheckCircle2 size={16} /> Você escolheu {selectedBarber.name} para {time}.</p>}<button className="button primary booking-next" disabled={!time || !assignedBarberId} onClick={() => setStep(4)}>Continuar <ChevronRight /></button></div>}
       {step === 4 && <form className="booking-step" onSubmit={finish}><button type="button" className="booking-back" onClick={() => setStep(3)}><ArrowLeft /> Voltar</button><div className="booking-step__head"><div><p className="eyebrow">Etapa 4</p><h2>Confirme seus dados</h2><p className="booking-step-note">Só agora pedimos o necessário para enviar a confirmação e evitar reservas duplicadas.</p></div></div><div className="booking-summary"><div><Scissors /><span><small>Serviços</small><strong>{selectedServices.map((service) => service.name).join(" + ")}</strong></span></div><div><UserRound /><span><small>Profissional</small><strong>{selectedBarber?.name}</strong></span></div><div><CalendarDays /><span><small>Quando</small><strong>{new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(`${selectedDate}T12:00:00Z`))} · {time}</strong></span></div><b>{formatCurrency(selectedPrice)}</b></div><div className="form-grid"><label className="field full"><span>Nome completo</span><input required minLength={2} autoComplete="name" value={customer.name} onChange={(e) => setCustomer({...customer,name:e.target.value})} /></label><label className="field"><span>E-mail para confirmação</span><input type="email" required autoComplete="email" value={customer.email} onChange={(e) => setCustomer({...customer,email:e.target.value})} /></label><label className="field"><span>WhatsApp para avisos</span><input type="tel" required minLength={10} autoComplete="tel" placeholder="(35) 99999-9999" value={customer.phone} onChange={(e) => setCustomer({...customer,phone:e.target.value})} /></label></div><p className="booking-privacy"><ShieldCheck /> O WhatsApp é obrigatório para a barbearia avisar sobre confirmações, remarcações ou imprevistos. Seus dados são usados somente para este atendimento.</p><button className="button primary booking-next" disabled={submitting}>{submitting ? "Protegendo seu horário…" : <>Confirmar agendamento <CheckCircle2 /></>}</button></form>}
