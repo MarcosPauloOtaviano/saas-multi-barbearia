@@ -8,11 +8,11 @@ import { useEffect, useRef, useState } from "react";
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { image: "/images/barberflow-scene-00-aerea.png", mobileImage: "/images/barberflow-scene-00-aerea-mobile.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-01-aproximacao.png", mobileImage: "/images/barberflow-scene-01-aproximacao-mobile.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-03-porta.png", mobileImage: "/images/barberflow-scene-03-porta-mobile.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-02-semi-realista.png", mobileImage: "/images/barberflow-scene-02-mobile.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-03-semi-realista.png", mobileImage: "/images/barberflow-scene-03-mobile.png", focus: "78% center" },
+  { image: "/images/barberflow-unisex-scene-00-aerea.webp", mobileImage: "/images/barberflow-unisex-scene-00-aerea-mobile.webp", focus: "62% center" },
+  { image: "/images/barberflow-unisex-scene-01-aproximacao.webp", mobileImage: "/images/barberflow-unisex-scene-01-aproximacao-mobile.webp", focus: "64% center" },
+  { image: "/images/barberflow-unisex-scene-02-entrada.webp", mobileImage: "/images/barberflow-unisex-scene-02-entrada-mobile.webp", focus: "58% center" },
+  { image: "/images/barberflow-unisex-scene-03-estudio.webp", mobileImage: "/images/barberflow-unisex-scene-03-estudio-mobile.webp", focus: "50% center" },
+  { image: "/images/barberflow-unisex-scene-04-final.webp", mobileImage: "/images/barberflow-unisex-scene-04-final-mobile.webp", focus: "64% center" },
 ];
 
 export function PlatformHome() {
@@ -64,11 +64,11 @@ export function PlatformHome() {
         <div className="cinematic-hero__grain" />
 
         <div className="cinematic-hero__copy">
-          <p className="cinematic-kicker"><span /> BarberFlow · Agendamento simples</p>
-          <h1 id="platform-title">Sua agenda<br /><em>começa aqui.</em></h1>
-          <p className="cinematic-hero__lead">Uma página clara para o cliente agendar e para sua equipe organizar o dia.</p>
+          <p className="cinematic-kicker"><span /> BarberFlow · Agenda para o seu espaço</p>
+          <h1 id="platform-title">Seu espaço.<br /><em>Sua agenda.</em></h1>
+          <p className="cinematic-hero__lead">Para barbearias, salões e estúdios de beleza. Um link bonito para seus clientes agendarem e sua equipe cuidar do dia.</p>
           <div className="cinematic-hero__actions">
-            <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer"><span>Quero cadastrar minha barbearia</span><ArrowUpRight /></a>
+            <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer"><span>Quero cadastrar meu espaço</span><ArrowUpRight /></a>
             <Link className="cinematic-login" href="/admin">Já tenho acesso <ArrowRight /></Link>
           </div>
         </div>
@@ -79,10 +79,10 @@ export function PlatformHome() {
     </section>
 
     <section className="platform-contact-cta" id="contato">
-      <div><p className="eyebrow">Contato</p><h2>Quer cadastrar seu estabelecimento?</h2><p>Fale com o BarberFlow pelo WhatsApp: <strong>+55 35 98844-0656</strong>.</p></div>
+      <div><p className="eyebrow">Contato</p><h2>Seu espaço pronto para receber mais clientes?</h2><p>Fale com o BarberFlow pelo WhatsApp: <strong>+55 35 98844-0656</strong>.</p></div>
       <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer">Falar no WhatsApp <ArrowUpRight /></a>
     </section>
 
-    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agendamento para barbearias.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Política de privacidade</Link><Link href="/termos">Termos de uso</Link></div></footer>
+    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agenda para barbearias e salões.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Política de privacidade</Link><Link href="/termos">Termos de uso</Link></div></footer>
   </main>;
 }
