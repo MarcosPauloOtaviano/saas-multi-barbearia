@@ -19,12 +19,13 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
   const mapHref = shop?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}` : null;
   const heroRef = useRef<HTMLElement>(null);
   const [sceneProgress, setSceneProgress] = useState(0);
-  const sceneIndex = Math.min(2, Math.floor(sceneProgress * 3));
   const scenes = [
-    { eyebrow: "01 / Na chegada", title: `${name} começa no primeiro clique.`, copy: "Uma página bonita para o cliente encontrar seu espaço e reservar sem perder tempo.", image: "/images/barberflow-scene-01-semi-realista.png", focus: "28% center" },
-    { eyebrow: "02 / No seu espaço", title: "O cliente encontra o seu lugar.", copy: `${name} tem seu próprio endereço, equipe, serviços e agenda, tudo no mesmo fluxo.`, image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
-    { eyebrow: "03 / No corte", title: "A equipe cuida do resto.", copy: `A equipe de ${name} trabalha com horários claros e um atendimento que termina bem.`, image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
+    { eyebrow: "01 / Do alto", title: `${name} começa de longe.`, copy: "Uma chegada cinematográfica que encontra o seu espaço no meio da cidade.", image: "/images/barberflow-scene-00-aerea.png", focus: "52% center" },
+    { eyebrow: "02 / Na chegada", title: `${name} começa no primeiro clique.`, copy: "Uma página bonita para o cliente encontrar seu espaço e reservar sem perder tempo.", image: "/images/barberflow-scene-01-semi-realista.png", focus: "28% center" },
+    { eyebrow: "03 / No seu espaço", title: "O cliente encontra o seu lugar.", copy: `${name} tem seu próprio endereço, equipe, serviços e agenda, tudo no mesmo fluxo.`, image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
+    { eyebrow: "04 / No corte", title: "A equipe cuida do resto.", copy: `A equipe de ${name} trabalha com horários claros e um atendimento que termina bem.`, image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
   ];
+  const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
   const scene = scenes[sceneIndex];
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
             const distance = Math.abs(sceneProgress - center);
             const opacity = Math.max(0, 1 - distance * 2.55);
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
-            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.5) * -3 : (sceneProgress - 1) * -2;
+            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.33) * -3 : index === 2 ? (sceneProgress - 0.66) * -2 : (sceneProgress - 1) * -2;
             return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}><Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" /></div>;
           })}
         </div>

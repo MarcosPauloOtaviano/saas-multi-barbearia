@@ -8,9 +8,10 @@ import { useEffect, useRef, useState } from "react";
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { eyebrow: "01 / Na rua", title: "Encontre seu horário.", copy: "Uma entrada simples para quem chega pelo celular.", image: "/images/barberflow-scene-01-semi-realista.png" },
-  { eyebrow: "02 / Na entrada", title: "Sua marca em destaque.", copy: "Cada estabelecimento tem seu próprio espaço.", image: "/images/barberflow-scene-02-semi-realista.png" },
-  { eyebrow: "03 / No corte", title: "A agenda no lugar.", copy: "Cliente e equipe enxergam só o que importa.", image: "/images/barberflow-scene-03-semi-realista.png" },
+  { eyebrow: "01 / Do alto", title: "Tudo começa de longe.", copy: "A cidade, a rua e o seu espaço no centro da experiência.", image: "/images/barberflow-scene-00-aerea.png" },
+  { eyebrow: "02 / Na rua", title: "Encontre seu horário.", copy: "Uma entrada simples para quem chega pelo celular.", image: "/images/barberflow-scene-01-semi-realista.png" },
+  { eyebrow: "03 / Na entrada", title: "Sua marca em destaque.", copy: "Cada estabelecimento tem seu próprio espaço.", image: "/images/barberflow-scene-02-semi-realista.png" },
+  { eyebrow: "04 / No corte", title: "A agenda no lugar.", copy: "Cliente e equipe enxergam só o que importa.", image: "/images/barberflow-scene-03-semi-realista.png" },
 ];
 
 export function PlatformHome() {
@@ -18,7 +19,7 @@ export function PlatformHome() {
   const [sceneProgress, setSceneProgress] = useState(0);
   const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
   const scene = scenes[sceneIndex];
-  const sceneFocus = ["28% center", "52% center", "78% center"];
+  const sceneFocus = ["52% center", "28% center", "52% center", "78% center"];
 
   useEffect(() => {
     function updateScene() {
@@ -53,7 +54,7 @@ export function PlatformHome() {
             const distance = Math.abs(sceneProgress - center);
             const opacity = Math.max(0, 1 - distance * 2.55);
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
-            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.5) * -3 : (sceneProgress - 1) * -2;
+            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.33) * -3 : index === 2 ? (sceneProgress - 0.66) * -2 : (sceneProgress - 1) * -2;
             return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: sceneFocus[index] }}>
               <Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" />
             </div>;
