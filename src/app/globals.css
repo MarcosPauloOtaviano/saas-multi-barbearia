@@ -241,6 +241,26 @@ a { color: inherit; }
 .field input, .field select, .field textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #dbe0da; border-radius: 11px; outline: none; color: var(--ink); background: white; font-size: 0.78rem; }
 .field textarea { resize: vertical; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--copper); box-shadow: 0 0 0 3px rgb(200 111 69 / 0.1); }
+.recurrence-toggle { display: flex; align-items: flex-start; gap: 10px; padding: 13px 14px; border: 1px solid #e8d7ce; border-radius: 14px; color: var(--pine); background: #fffaf7; cursor: pointer; }
+.recurrence-toggle input { width: 19px; height: 19px; margin-top: 1px; accent-color: var(--copper); }
+.recurrence-toggle span { display: grid; gap: 4px; }
+.recurrence-toggle strong { display: flex; align-items: center; gap: 6px; font-size: .72rem; }
+.recurrence-toggle small { color: var(--muted); font-size: .61rem; line-height: 1.35; }
+.recurrence-panel { display: grid; gap: 14px; padding: 15px; border: 1px solid #eadbd3; border-radius: 16px; background: #fffdfb; }
+.recurrence-panel .form-grid { gap: 11px; }
+.recurrence-panel__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recurrence-panel__heading div { display: grid; gap: 3px; }
+.recurrence-panel__heading strong { font-size: .75rem; }
+.recurrence-panel__heading small { color: var(--muted); font-size: .59rem; }
+.recurrence-panel__heading > span { padding: 5px 8px; border-radius: 999px; color: var(--copper-dark); background: #f7e8df; font-size: .58rem; font-weight: 800; white-space: nowrap; }
+.recurrence-days { margin: 0; padding: 0; border: 0; }
+.recurrence-days legend { margin-bottom: 8px; color: #48534e; font-size: .66rem; font-weight: 780; }
+.recurrence-days legend small { color: var(--muted); font-weight: 600; }
+.recurrence-days > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.recurrence-days label { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: white; font-size: .62rem; font-weight: 750; cursor: pointer; }
+.recurrence-days label:has(input:checked) { border-color: var(--copper); color: var(--copper-dark); background: #fff1ea; }
+.recurrence-days input { width: 15px; height: 15px; accent-color: var(--copper); }
+.recurrence-hint { margin: -3px 0 0; color: var(--muted); font-size: .6rem; line-height: 1.4; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 7px; }
 .form-feedback { display: flex; align-items: center; gap: 7px; margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
 .form-feedback.success { color: #216a48; background: #e5f4eb; }.form-feedback.error { color: #963f35; background: #fdecea; }

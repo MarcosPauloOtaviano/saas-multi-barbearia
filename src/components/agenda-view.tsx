@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, MessageCircle, Plus, Scissors, UserRound, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, MessageCircle, Plus, Repeat2, Scissors, UserRound, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
@@ -19,7 +19,7 @@ export function AgendaView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const base = useAdminBase();
-  const { appointments, clients, services, barbers, addAppointment, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId, shopName } = useAppData();
+  const { appointments, clients, services, barbers, addAppointment, addRecurringAppointments, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId, shopName } = useAppData();
   const [view, setView] = useState<"day" | "week">("day");
   const [barberFilter, setBarberFilter] = useState(searchParams.get("barber") ?? currentBarberId ?? "all");
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
@@ -28,6 +28,13 @@ export function AgendaView() {
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [statusFeedback, setStatusFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsappTemplate>("confirmacao");
+  const [recurringEnabled, setRecurringEnabled] = useState(false);
+  const [recurrenceInterval, setRecurrenceInterval] = useState("7");
+  const [recurrenceDuration, setRecurrenceDuration] = useState("3");
+  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>(() => {
+    const day = new Date(`${todayIso}T12:00:00Z`).getUTCDay();
+    return [day];
+  });
   const [nowMs, setNowMs] = useState(0);
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
@@ -86,18 +93,37 @@ export function AgendaView() {
     if (!selectedServices.length || !barber || !client) return;
     const totalDuration = selectedServices.reduce((total, service) => total + service.durationMinutes, 0);
     const totalPrice = selectedServices.reduce((total, service) => total + service.priceCents, 0);
+    const recurring = recurringEnabled;
+    const intervalPreset = String(data.get("intervalPreset") ?? recurrenceInterval);
+    const intervalDays = intervalPreset === "custom" ? Number(data.get("intervalDays")) : Number(intervalPreset);
+    const durationMonths = Number(data.get("durationMonths") ?? recurrenceDuration) as 3 | 12 | 24;
+    const weekdays = data.getAll("weekdays").map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);
+    if (recurring && (!Number.isInteger(intervalDays) || intervalDays < 1 || intervalDays > 365)) {
+      setFeedback({ ok: false, message: "Escolha um intervalo entre 1 e 365 dias." });
+      return;
+    }
+    if (recurring && weekdays.length > 0 && intervalDays % 7 !== 0) {
+      setFeedback({ ok: false, message: "Ao selecionar dias da semana, use um intervalo de 7, 14, 21 ou 28 dias." });
+      return;
+    }
     setBusy(true);
     try {
-    const result = await addAppointment({
-      clientId: client.id, clientName: client.name,
-      barberId: barber.id, barberName: barber.name,
-      serviceId: selectedServices[0].id, serviceIds: selectedServices.map((service) => service.id), serviceName: selectedServices.map((service) => service.name).join(" + "),
-      date: String(data.get("date")), time: String(data.get("time")),
-      durationMinutes: totalDuration, priceCents: totalPrice,
-    });
+    const result = recurring
+      ? await addRecurringAppointments({ clientId: client.id, barberId: barber.id, serviceIds: selectedServices.map((service) => service.id), firstDate: String(data.get("date")), time: String(data.get("time")), intervalDays, durationMonths, weekdays })
+      : await addAppointment({
+        clientId: client.id, clientName: client.name,
+        barberId: barber.id, barberName: barber.name,
+        serviceId: selectedServices[0].id, serviceIds: selectedServices.map((service) => service.id), serviceName: selectedServices.map((service) => service.name).join(" + "),
+        date: String(data.get("date")), time: String(data.get("time")),
+        durationMinutes: totalDuration, priceCents: totalPrice,
+      });
     setFeedback(result);
     if (result.ok) {
       form.reset();
+      setRecurringEnabled(false);
+      setRecurrenceWeekdays([]);
+      setRecurrenceInterval("7");
+      setRecurrenceDuration("3");
       setSelectedDate(String(data.get("date")));
       window.setTimeout(() => { setModalOpen(false); setFeedback(null); router.push(`${base}/agenda`); }, 900);
     }
@@ -157,6 +183,17 @@ export function AgendaView() {
               <label className="field full"><span>Barbeiro</span><select name="barber" required defaultValue={currentBarberId ?? ""}><option value="" disabled>Selecione o barbeiro</option>{barbers.filter((barber) => barber.active && (role !== "barber" || barber.id === currentBarberId)).map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>
               <label className="field"><span>Data</span><input name="date" type="date" defaultValue={selectedDate} min={todayIso} required /></label>
               <label className="field"><span>Horário</span><input name="time" type="time" required /></label>
+              <label className="recurrence-toggle full"><input type="checkbox" checked={recurringEnabled} onChange={(event) => setRecurringEnabled(event.target.checked)} /><span><strong><Repeat2 size={16} /> Criar agendamento recorrente</strong><small>Reserve esse mesmo horário para o cliente por vários meses.</small></span></label>
+              {recurringEnabled && <div className="recurrence-panel full">
+                <div className="recurrence-panel__heading"><div><strong>Agenda fixa</strong><small>Você pode revisar e cancelar cada horário depois, na agenda.</small></div><span>{recurrenceDuration} meses</span></div>
+                <div className="form-grid">
+                  <label className="field"><span>Repetir a cada</span><select name="intervalPreset" value={recurrenceInterval} onChange={(event) => setRecurrenceInterval(event.target.value)}><option value="7">7 dias (semanal)</option><option value="14">14 dias (quinzenal)</option><option value="21">21 dias</option><option value="28">28 dias</option><option value="15">15 dias</option><option value="30">30 dias</option><option value="custom">Outro intervalo…</option></select></label>
+                  {recurrenceInterval === "custom" ? <label className="field"><span>Quantidade de dias</span><input name="intervalDays" type="number" min="1" max="365" defaultValue="7" required /></label> : <span />}
+                  <label className="field"><span>Por quanto tempo</span><select name="durationMonths" value={recurrenceDuration} onChange={(event) => setRecurrenceDuration(event.target.value)}><option value="3">3 meses</option><option value="12">12 meses</option><option value="24">24 meses</option></select></label>
+                </div>
+                <fieldset className="recurrence-days"><legend>Dias da semana <small>(opcional)</small></legend><div>{[[0,"Dom"],[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"]].map(([value,label]) => <label key={String(value)}><input name="weekdays" type="checkbox" value={String(value)} checked={recurrenceWeekdays.includes(Number(value))} onChange={(event) => setRecurrenceWeekdays((current) => event.target.checked ? [...new Set([...current, Number(value)])] : current.filter((day) => day !== Number(value)))} /><span>{label}</span></label>)}</div></fieldset>
+                <p className="recurrence-hint">{recurrenceWeekdays.length ? "Os dias marcados serão repetidos na cadência escolhida." : "Sem dias marcados, o sistema repete exatamente a cada intervalo escolhido."}</p>
+              </div>}
               {feedback && <p className={`form-feedback full ${feedback.ok ? "success" : "error"}`}>{feedback.ok ? <Check size={17} /> : <CircleX size={17} />}{feedback.message}</p>}
               <div className="modal-actions full"><button type="button" className="button ghost" onClick={() => setModalOpen(false)}>Cancelar</button><button className="button primary" type="submit" disabled={busy}>{busy?"Salvando…":"Criar agendamento"}</button></div>
             </form>

@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { usePathname } from "next/navigation";
 import { initialAppointments, initialBarbers, initialClients, initialNotifications, initialServices, initialTeamMembers } from "@/lib/initial-data";
 import { hasSchedulingConflict } from "@/lib/scheduling";
-import type { AppNotification, Appointment, Barber, Client, MemberRole, Service, TeamMember, WorkingHour, Product, ScheduleDay } from "@/lib/types";
+import type { AppNotification, Appointment, Barber, Client, MemberRole, Service, TeamMember, WorkingHour, Product, ScheduleDay, RecurringAppointmentInput } from "@/lib/types";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,6 +48,7 @@ type AppDataContextValue = {
   shopName: string;
   canManage: boolean;
   addAppointment: (appointment: NewAppointment) => Promise<{ ok: boolean; message: string }>;
+  addRecurringAppointments: (input: RecurringAppointmentInput) => Promise<{ ok: boolean; message: string; createdCount?: number }>;
   updateAppointmentStatus: (id: string, status: Appointment["status"]) => Promise<{ ok: boolean; message: string }>;
   rescheduleAppointment: (id: string, date: string, time: string) => Promise<{ ok: boolean; message: string }>;
   addClient: (client: NewClient) => Promise<void>;
@@ -387,6 +388,31 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (error) return { ok: false, message: error.code === "23P01" ? "Esse barbeiro já possui um atendimento nesse intervalo." : "Não foi possível criar o agendamento." };
       setAppointments((current) => [...current, { ...input, id: String(data), status: "pending", source: "internal" }]);
       return { ok: true, message: "Agendamento criado e lembretes programados." };
+    },
+    addRecurringAppointments: async (input) => {
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const serviceIds = input.serviceIds.filter(Boolean);
+      if (!serviceIds.length) return { ok: false, message: "Selecione pelo menos um serviço." };
+      const { data, error } = await createClient().rpc("create_recurring_internal_appointments", {
+        target_barbershop_id: remoteTenantId.current,
+        selected_service_ids: serviceIds,
+        selected_barber_id: input.barberId,
+        selected_client_id: input.clientId,
+        first_date: input.firstDate,
+        local_time: `${input.time}:00`,
+        interval_days: input.intervalDays,
+        duration_months: input.durationMonths,
+        selected_weekdays: input.weekdays,
+        appointment_notes: null,
+      });
+      if (error) {
+        if (error.code === "23P01" || error.message?.includes("recurrence_conflict")) {
+          return { ok: false, message: error.message?.replace(/^.*recurrence_conflict:\s*/, "Conflito encontrado em ") || "Existe um horário ocupado dentro do período escolhido." };
+        }
+        return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente." };
+      }
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      return { ok: true, message: `${Number(data?.created_count ?? 0)} agendamentos recorrentes criados.`, createdCount: Number(data?.created_count ?? 0) };
     },
     updateAppointmentStatus: async (id, status) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;

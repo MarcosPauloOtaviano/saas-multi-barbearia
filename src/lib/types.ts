@@ -26,6 +26,18 @@ export type Appointment = {
   source: "internal" | "public_booking";
 };
 
+export type RecurringAppointmentInput = {
+  clientId: string;
+  barberId: string;
+  serviceIds: string[];
+  firstDate: string;
+  time: string;
+  /** Exact cadence in days when weekdays is empty, or a weekly cadence (7/14/21/28...) when weekdays are selected. */
+  intervalDays: number;
+  durationMonths: 3 | 12 | 24;
+  weekdays: number[];
+};
+
 export type Client = {
   id: string;
   name: string;
