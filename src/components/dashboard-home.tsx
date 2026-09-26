@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BellRing, CalendarDays, ChevronRight, CircleCheckBig, Clock3, Sparkles, UserRound, Volume2 } from "lucide-react";
+import { BellRing, CalendarDays, ChevronRight, CircleCheckBig, CircleDollarSign, Clock3, Sparkles, UserRound, Volume2 } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { useAdminBase } from "@/lib/admin-route";
+import { formatCurrency } from "@/lib/format";
 
 const statusLabel = { pending: "Aguardando", confirmed: "Confirmado", in_progress: "Em atendimento", completed: "Concluído", cancelled: "Cancelado", no_show: "Faltou" };
 
@@ -17,6 +18,9 @@ export function DashboardHome() {
   const today = appointments.filter((item) => item.date === todayIso && !["cancelled", "no_show"].includes(item.status)).sort((a, b) => a.time.localeCompare(b.time));
   const confirmed = today.filter((item) => item.status === "confirmed").length;
   const pending = today.filter((item) => item.status === "pending").length;
+  const completedThisMonth = appointments.filter((item) => item.status === "completed" && item.date.startsWith(todayIso.slice(0, 7)));
+  const personalProduction = completedThisMonth.reduce((sum, item) => sum + item.priceCents, 0);
+  const personalMinutes = completedThisMonth.reduce((sum, item) => sum + item.durationMinutes, 0);
   const pendingRequests = appointments.filter((item) => item.status === "pending").sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
   const pendingAppointments = pendingRequests.slice(0, 3);
   const unreadNotifications = notifications.filter((item) => !item.read);
@@ -62,6 +66,8 @@ export function DashboardHome() {
           </div>
           <div className="progress-track"><span style={{ width: `${today.length ? (confirmed / today.length) * 100 : 0}%` }} /></div>
         </section>
+
+        {role === "barber" && <section className="production-card" aria-label="Minha produção"><div className="section-heading compact"><div><p className="eyebrow">Minha produção</p><h2>Seu mês até agora</h2></div><span className="production-card__icon"><CircleDollarSign size={18} /></span></div><div className="production-card__metrics"><div><strong>{completedThisMonth.length}</strong><span>atendimentos</span></div><div><strong>{personalMinutes >= 60 ? `${Math.floor(personalMinutes / 60)}h` : `${personalMinutes}min`}</strong><span>trabalhados</span></div><div><strong>{formatCurrency(personalProduction)}</strong><span>em serviços</span></div></div><Link className="secondary-action" href={`${base}/minha-producao`}>Ver minha produção <ChevronRight size={17} /></Link></section>}
 
         <section className={`alerts-card requests-panel ${pendingRequests.length ? "has-pending" : ""}`} aria-labelledby="alertas-titulo" aria-live="polite">
           <div className="section-heading compact"><div><p className="eyebrow">Precisa de atenção</p><h2 id="alertas-titulo">Central de avisos</h2></div><span className="count-badge">{pendingRequests.length + unreadNotifications.length}</span></div>

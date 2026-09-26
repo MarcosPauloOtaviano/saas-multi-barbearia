@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bell, CalendarDays, ChevronDown, ExternalLink, House, LogOut, Scissors, Settings, UserRoundCog, UsersRound, Menu, X, Package, Clock, UserRound } from "lucide-react";
+import { BarChart3, Bell, CalendarDays, ChevronDown, CircleDollarSign, ExternalLink, House, LogOut, Scissors, Settings, UserRoundCog, UsersRound, Menu, X, Package, Clock, UserRound } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { signOut } from "@/app/auth/actions";
 import type { MemberRole } from "@/lib/types";
@@ -17,6 +17,7 @@ const navigation = [
   { path: "/produtos", label: "Produtos", icon: Package, roles: ["owner", "manager"] },
   { path: "/horarios", label: "Funcionamento", icon: Clock, roles: ["owner", "manager"] },
   { path: "/perfil", label: "Meu perfil", icon: UserRound, roles: ["owner", "manager", "barber", "receptionist"] },
+  { path: "/minha-producao", label: "Minha produção", icon: CircleDollarSign, roles: ["barber"] },
   { path: "/equipe", label: "Equipe", icon: UserRoundCog, roles: ["owner", "manager"] },
   { path: "/relatorios", label: "Relatórios", icon: BarChart3, roles: ["owner", "manager"] },
   { path: "/notificacoes", label: "Avisos", icon: Bell, roles: ["owner", "manager", "barber", "receptionist"] },
@@ -39,7 +40,6 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
   const logoutAction = signOut.bind(null, slug);
 
   if (loading) return <main className="auth-shell"><p role="status">Carregando sua barbearia…</p></main>;
-  if (loadError) return <main className="auth-shell"><section><h1>Não foi possível abrir o painel</h1><p role="alert">{loadError}</p><button className="button primary" onClick={() => window.location.reload()}>Tentar novamente</button><form action={logoutAction}><button className="button ghost">Sair</button></form></section></main>;
 
   return <main className="app-frame">
     <aside className="desktop-rail desktop-rail--full" aria-label="Navegação principal">
@@ -50,6 +50,7 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
 
     <section className="workspace app-workspace">
       <header className="topbar app-topbar"><Link className="mobile-wordmark" href={base}><span className="mobile-wordmark__mark"><Scissors size={19} /></span><span className="mobile-wordmark__copy"><strong>{shopName}</strong><small>Painel da equipe</small></span></Link><div className="topbar-date"><p className="eyebrow">{todayLabel}</p><span>{shopName}</span></div><div className="topbar-actions"><Link className="customer-preview-link" href={`/b/${slug}`} aria-label="Abrir página pública" title="Abrir página pública"><ExternalLink size={17} /><span>Página pública</span></Link><Link className="notification-button" href={`${base}/notificacoes`} aria-label={`${unread} novas notificações`}><Bell size={20} />{unread > 0 && <span>{unread}</span>}</Link><details className="profile-menu header-profile"><summary><span className="header-avatar">{userInitials}</span><span className="header-user">{currentUserName}<small>{roleLabels[role]}</small></span><ChevronDown size={16} /></summary><div className="profile-popover"><strong>{currentUserName}</strong><span>{roleLabels[role]}</span>{(role === "owner" || role === "manager") && <Link href={`${base}/configuracoes`}><Settings size={16} /> Configurações</Link>}<form action={logoutAction}><button type="submit"><LogOut size={16} /> Sair</button></form></div></details></div></header>
+      {loadError && <div className="connection-banner" role="status"><span>{loadError}</span><button className="text-button" onClick={() => window.location.reload()}>Tentar agora</button></div>}
       {routeAllowed ? children : <section className="content-card access-card"><UserRoundCog /><div><p className="eyebrow">Acesso protegido</p><h1>Esta área não faz parte do seu perfil</h1><p>O perfil de {roleLabels[role].toLowerCase()} vê somente as funções necessárias para o trabalho.</p><Link className="button primary" href={`${base}/agenda`}>Abrir minha agenda</Link></div></section>}
     </section>
 

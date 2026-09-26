@@ -23,6 +23,7 @@ export default async function TenantDashboardPage({ params }: { params: Promise<
     case "equipe": return <TeamView />;
     case "notificacoes": return <NotificationsView />;
     case "relatorios": return <ReportsView />;
+    case "minha-producao": return <ReportsView personalOnly />;
     case "servicos": return <ServicesView />;
     case "produtos": return <CatalogView kind="product" />;
     case "horarios": return <HoursView />;

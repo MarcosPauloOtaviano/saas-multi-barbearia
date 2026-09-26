@@ -189,6 +189,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
     let refreshInFlight = false;
+    let lastRecoveryAt = 0;
 
     const load = async () => {
       if (refreshInFlight) return;
@@ -322,14 +323,25 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         setLoadError("");
       } catch {
         if (cancelled) return;
-        remoteTenantId.current = null;
-        setLoadError("Não foi possível carregar os dados. Confira a conexão e tente novamente.");
-        setAppointments([]); setClients([]); setServices([]); setNotifications([]); setBarbers([]); setTeamMembers([]); setWorkingHours([]);
+        const now = Date.now();
+        if (now - lastRecoveryAt > 10_000) {
+          lastRecoveryAt = now;
+          const refreshed = await supabase.auth.refreshSession();
+          if (!refreshed.error && refreshed.data.session) {
+            window.setTimeout(() => { void load(); }, 0);
+            return;
+          }
+        }
+        // Keep the last known data while mobile connectivity/auth recovers.
+        // The shell shows a small retry banner after the first successful load
+        // instead of replacing the whole panel with an error screen.
+        setLoadError("A conexão foi interrompida. Tentando reconectar…");
       } finally {
         refreshInFlight = false;
         if (!cancelled) setReadyTenant(tenantSlug);
       }
     };
+    supabase.auth.startAutoRefresh();
     const authSubscription = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
       if (event === "SIGNED_OUT" || !session) {
@@ -356,6 +368,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("pageshow", refreshOnFocus);
       window.removeEventListener("online", refreshOnFocus);
       authSubscription.data.subscription.unsubscribe();
+      supabase.auth.stopAutoRefresh();
       if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
       realtimeChannel = null;
       remoteTenantId.current = null;

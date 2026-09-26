@@ -8,8 +8,9 @@ import { formatCurrency } from "@/lib/format";
 
 const weekdayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-export function ReportsView() {
-  const { appointments, clients, services, barbers } = useAppData();
+export function ReportsView({ personalOnly = false }: { personalOnly?: boolean }) {
+  const { appointments, clients, services, barbers, role, currentUserName } = useAppData();
+  const isPersonal = personalOnly || role === "barber";
   const [period, setPeriod] = useState<"month" | "all">("month");
   const monthParts = new Intl.DateTimeFormat("en", { year: "numeric", month: "2-digit", timeZone: "America/Sao_Paulo" }).formatToParts(new Date());
   const currentMonth = `${monthParts.find((part) => part.type === "year")?.value}-${monthParts.find((part) => part.type === "month")?.value}`;
@@ -23,6 +24,20 @@ export function ReportsView() {
   const serviceRanking = services.map((service) => ({ service, count: completed.filter((item) => item.serviceId === service.id).length })).sort((a, b) => b.count - a.count);
   const barberRanking = barbers.map((barber) => ({ barber, jobs: completed.filter((item) => item.barberId === barber.id) })).sort((a, b) => b.jobs.length - a.jobs.length);
   const topBarberCount = Math.max(1, ...barberRanking.map((item) => item.jobs.length));
+
+  if (isPersonal) {
+    const workedMinutes = completed.reduce((sum, item) => sum + item.durationMinutes, 0);
+    const personalServiceRanking = services.map((service) => ({ service, count: completed.filter((item) => (item.serviceIds ?? [item.serviceId]).includes(service.id)).length })).filter((item) => item.count > 0).sort((a, b) => b.count - a.count);
+    return <>
+      <PageTitle eyebrow="Minha produção" title={`Seu desempenho, ${currentUserName}`} description="Acompanhe somente os atendimentos e o valor dos serviços feitos por você." action={<button className="button subtle" onClick={() => setPeriod((current) => current === "month" ? "all" : "month")}><CalendarRange size={17} /> {period === "month" ? "Este mês" : "Todo o período"}</button>} />
+      <div className="kpi-grid">
+        <article className="kpi-card"><span className="kpi-icon green"><Scissors /></span><div><small>Atendimentos concluídos</small><strong>{completed.length}</strong><p>{period === "month" ? "Neste mês" : "Todo o período"}</p></div></article>
+        <article className="kpi-card"><span className="kpi-icon copper"><CircleDollarSign /></span><div><small>Valor dos seus serviços</small><strong>{formatCurrency(revenue)}</strong><p>Somente atendimentos concluídos</p></div></article>
+        <article className="kpi-card"><span className="kpi-icon blue"><CalendarRange /></span><div><small>Tempo trabalhado</small><strong>{Math.floor(workedMinutes / 60)}h {workedMinutes % 60}min</strong><p>Tempo reservado em serviços</p></div></article>
+      </div>
+      <section className="content-card full-span personal-production-card"><div className="section-heading compact"><div><p className="eyebrow">Seus serviços</p><h2>O que você mais realizou</h2></div></div>{personalServiceRanking.length ? <div className="ranking-list">{personalServiceRanking.slice(0, 6).map(({ service, count }, index) => <div key={service.id}><span className="rank-number">{String(index + 1).padStart(2, "0")}</span><span><strong>{service.name}</strong><small>{count} {count === 1 ? "atendimento" : "atendimentos"}</small></span><i><b style={{ width: `${completed.length ? (count / completed.length) * 100 : 0}%` }} /></i></div>)}</div> : <p className="empty-copy">Seus atendimentos concluídos aparecerão aqui.</p>}</section>
+    </>;
+  }
 
   return <>
     <PageTitle eyebrow="Desempenho" title="Relatórios" description="Indicadores formados apenas por atendimentos reais." action={<button className="button subtle" onClick={() => setPeriod((current) => current === "month" ? "all" : "month")}><CalendarRange size={17} /> {period === "month" ? "Este mês" : "Todo o período"}</button>} />
