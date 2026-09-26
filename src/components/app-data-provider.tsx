@@ -320,12 +320,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
     };
     void load();
+    const refreshNow = () => { void load(); };
+    window.addEventListener("barberflow:refresh", refreshNow);
     const refreshTimer = window.setInterval(() => { void load(); }, 8_000);
     const refreshOnFocus = () => { if (document.visibilityState === "visible") void load(); };
     document.addEventListener("visibilitychange", refreshOnFocus);
     return () => {
       cancelled = true;
       window.clearInterval(refreshTimer);
+      window.removeEventListener("barberflow:refresh", refreshNow);
       document.removeEventListener("visibilitychange", refreshOnFocus);
       if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
       realtimeChannel = null;
@@ -411,7 +414,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         }
         return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente." };
       }
-      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      window.dispatchEvent(new Event("barberflow:refresh"));
       return { ok: true, message: `${Number(data?.created_count ?? 0)} agendamentos recorrentes criados.`, createdCount: Number(data?.created_count ?? 0) };
     },
     updateAppointmentStatus: async (id, status) => {
