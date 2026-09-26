@@ -28,6 +28,7 @@ export function AgendaView() {
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [statusFeedback, setStatusFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsappTemplate>("confirmacao");
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const [recurringEnabled, setRecurringEnabled] = useState(false);
   const [recurrenceInterval, setRecurrenceInterval] = useState("7");
   const [recurrenceDuration, setRecurrenceDuration] = useState("3");
@@ -39,7 +40,6 @@ export function AgendaView() {
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
   const selectedClient = selected ? clients.find((client) => client.id === selected.clientId) : undefined;
-  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const [selectedDate, setSelectedDate] = useState(todayIso);
   function shiftDate(offset: number) { const date = new Date(`${selectedDate}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + offset); setSelectedDate(date.toISOString().slice(0,10)); }
   const weekStart = new Date(`${selectedDate}T12:00:00Z`);
