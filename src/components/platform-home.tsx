@@ -8,11 +8,11 @@ import { useEffect, useRef, useState } from "react";
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { image: "/images/barberflow-scene-00-aerea.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-01-aproximacao.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-03-porta.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
-  { image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
+  { image: "/images/barberflow-scene-00-aerea.png", mobileImage: "/images/barberflow-scene-00-aerea-mobile.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-01-aproximacao.png", mobileImage: "/images/barberflow-scene-01-aproximacao-mobile.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-03-porta.png", mobileImage: "/images/barberflow-scene-03-porta-mobile.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-02-semi-realista.png", mobileImage: "/images/barberflow-scene-02-mobile.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-03-semi-realista.png", mobileImage: "/images/barberflow-scene-03-mobile.png", focus: "78% center" },
 ];
 
 export function PlatformHome() {
@@ -55,7 +55,8 @@ export function PlatformHome() {
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
             const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.25) * -3 : index === 2 ? (sceneProgress - 0.5) * -2 : index === 3 ? (sceneProgress - 0.75) * -2 : (sceneProgress - 1) * -2;
             return <div className="cinematic-hero__media" key={item.image} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}>
-              <Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" />
+              <Image className="cinematic-image cinematic-image--desktop" src={item.image} alt="" fill priority={index === 0} sizes="100vw" />
+              <Image className="cinematic-image cinematic-image--mobile" src={item.mobileImage} alt="" fill sizes="100vw" />
             </div>;
           })}
         </div>

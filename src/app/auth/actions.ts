@@ -13,7 +13,8 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
   const password = String(formData.get("password") ?? "");
   if (tenantSlug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantSlug)) return { error: "Estabelecimento inválido." };
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const authEmail = email.toLowerCase() === "teste@teste" ? "teste@teste.com" : email;
+  const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password });
   if (error) return { error: "E-mail ou senha inválidos." };
   const membershipQuery = supabase
     .from("memberships")
@@ -42,7 +43,8 @@ export async function sendReset(_: AuthState, formData: FormData): Promise<AuthS
   const supabase = await createClient();
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
   const safeNext = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenantSlug) ? `/admin/${tenantSlug}/entrar` : "/admin";
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/auth/callback?type=recovery&next=${encodeURIComponent(safeNext)}` });
+  const authEmail = email.toLowerCase() === "teste@teste" ? "teste@teste.com" : email;
+  const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: `${appUrl}/auth/callback?type=recovery&next=${encodeURIComponent(safeNext)}` });
   if (error) return { error: "Não foi possível enviar o e-mail agora." };
   return { success: "Se o endereço estiver cadastrado, você receberá as instruções." };
 }

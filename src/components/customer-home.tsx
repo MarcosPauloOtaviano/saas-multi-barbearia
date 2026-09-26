@@ -20,11 +20,11 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
   const heroRef = useRef<HTMLElement>(null);
   const [sceneProgress, setSceneProgress] = useState(0);
   const scenes = [
-    { image: "/images/barberflow-scene-00-aerea.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-01-aproximacao.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-03-porta.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
+    { image: "/images/barberflow-scene-00-aerea.png", mobileImage: "/images/barberflow-scene-00-aerea-mobile.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-01-aproximacao.png", mobileImage: "/images/barberflow-scene-01-aproximacao-mobile.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-03-porta.png", mobileImage: "/images/barberflow-scene-03-porta-mobile.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-02-semi-realista.png", mobileImage: "/images/barberflow-scene-02-mobile.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-03-semi-realista.png", mobileImage: "/images/barberflow-scene-03-mobile.png", focus: "78% center" },
   ];
   const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
 
@@ -55,7 +55,7 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
             const opacity = Math.max(0, 1 - distance * 2.55);
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
             const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.25) * -3 : index === 2 ? (sceneProgress - 0.5) * -2 : index === 3 ? (sceneProgress - 0.75) * -2 : (sceneProgress - 1) * -2;
-            return <div className="cinematic-hero__media" key={item.image} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}><Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" /></div>;
+            return <div className="cinematic-hero__media" key={item.image} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}><Image className="cinematic-image cinematic-image--desktop" src={item.image} alt="" fill priority={index === 0} sizes="100vw" /><Image className="cinematic-image cinematic-image--mobile" src={item.mobileImage} alt="" fill sizes="100vw" /></div>;
           })}
         </div>
         <div className="cinematic-hero__veil" />
