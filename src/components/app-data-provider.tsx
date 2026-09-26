@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { initialAppointments, initialBarbers, initialClients, initialNotifications, initialServices, initialTeamMembers } from "@/lib/initial-data";
 import { hasSchedulingConflict } from "@/lib/scheduling";
 import type { AppNotification, Appointment, Barber, Client, MemberRole, Service, TeamMember, WorkingHour, Product, ScheduleDay, RecurringAppointmentInput } from "@/lib/types";
@@ -74,6 +74,7 @@ const unavailable = { ok: false, message: "O banco de produção ainda não est�
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const tenantSlug = !pathname.endsWith('/entrar') ? pathname.match(/^\/admin\/([^/]+)/)?.[1] ?? null : null;
   const [readyTenant, setReadyTenant] = useState<string | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -192,8 +193,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (refreshInFlight) return;
       refreshInFlight = true;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('session unavailable');
+        // Mobile browsers can pause a tab long enough for the access token to
+        // expire while the refresh token remains valid. Rehydrate the session
+        // before reading the tenant so returning from a locked screen does not
+        // leave the panel in a false "data unavailable" state.
+        let session = (await supabase.auth.getSession()).data.session;
+        if (!session || (session.expires_at && session.expires_at * 1000 <= Date.now() + 90_000)) {
+          session = (await supabase.auth.refreshSession()).data.session;
+        }
+        if (!session) throw new Error('session unavailable');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) throw new Error('session unavailable');
         const { data: membership } = await supabase
           .from("memberships")
           .select("id,barbershop_id,role,status,barbershops!inner(name,slug,timezone,booking_paused)")
@@ -319,23 +329,38 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) setReadyTenant(tenantSlug);
       }
     };
+    const authSubscription = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "SIGNED_OUT" || !session) {
+        router.replace(`/admin/${slug}/entrar`);
+        return;
+      }
+      if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        window.setTimeout(() => { void load(); }, 0);
+      }
+    });
     void load();
     const refreshNow = () => { void load(); };
     window.addEventListener("barberflow:refresh", refreshNow);
     const refreshTimer = window.setInterval(() => { void load(); }, 8_000);
     const refreshOnFocus = () => { if (document.visibilityState === "visible") void load(); };
     document.addEventListener("visibilitychange", refreshOnFocus);
+    window.addEventListener("pageshow", refreshOnFocus);
+    window.addEventListener("online", refreshOnFocus);
     return () => {
       cancelled = true;
       window.clearInterval(refreshTimer);
       window.removeEventListener("barberflow:refresh", refreshNow);
       document.removeEventListener("visibilitychange", refreshOnFocus);
+      window.removeEventListener("pageshow", refreshOnFocus);
+      window.removeEventListener("online", refreshOnFocus);
+      authSubscription.data.subscription.unsubscribe();
       if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
       realtimeChannel = null;
       remoteTenantId.current = null;
       knownNotificationIds.current = null;
     };
-  }, [playNotificationSound, showNotificationOnDevice, tenantSlug]);
+  }, [playNotificationSound, router, showNotificationOnDevice, tenantSlug]);
 
   const currentBarberId = role === "barber" ? remoteBarberId : null;
   const visibleAppointments = currentBarberId ? appointments.filter((item) => item.barberId === currentBarberId) : appointments;
