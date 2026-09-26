@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type NewAppointment = Omit<Appointment, "id" | "status" | "source"> & { serviceIds?: string[] };
 type NewClient = Omit<Client, "id" | "visits" | "lastVisit">;
+type ClientMutationResult = { ok: boolean; message: string; client?: Client };
 type NewService = Omit<Service, "id" | "active">;
 type EditableService = Omit<Service, "active">;
 type NewBarber = Pick<Barber, "name" | "color">;
@@ -51,7 +52,7 @@ type AppDataContextValue = {
   addRecurringAppointments: (input: RecurringAppointmentInput) => Promise<{ ok: boolean; message: string; createdCount?: number }>;
   updateAppointmentStatus: (id: string, status: Appointment["status"]) => Promise<{ ok: boolean; message: string }>;
   rescheduleAppointment: (id: string, date: string, time: string) => Promise<{ ok: boolean; message: string }>;
-  addClient: (client: NewClient) => Promise<void>;
+  addClient: (client: NewClient) => Promise<ClientMutationResult>;
   addService: (service: NewService) => Promise<{ ok: boolean; message: string }>;
   updateService: (service: EditableService) => Promise<{ ok: boolean; message: string }>;
   addBarber: (barber: NewBarber) => Promise<{ ok: boolean; message: string }>;
@@ -488,9 +489,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       return { ok: true, message: "Atendimento remarcado e lembretes atualizados." };
     },
     addClient: async (client) => {
-      if (!hasSupabaseEnv || !remoteTenantId.current) return;
-      const { data, error } = await createClient().from("clients").insert({ barbershop_id: remoteTenantId.current, name: client.name, phone: client.phone, email: client.email, notes: client.notes }).select("id").single();
-      if (!error) setClients((current) => [{ ...client, id: data.id, visits: 0, lastVisit: "Ainda não atendido" }, ...current]);
+      if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
+      const { data, error } = await createClient().from("clients").insert({ barbershop_id: remoteTenantId.current, name: client.name, phone: client.phone || null, email: client.email || null, notes: client.notes || null }).select("id").single();
+      if (error || !data?.id) return { ok: false, message: "Não foi possível cadastrar o cliente." };
+      const createdClient = { ...client, id: data.id, visits: 0, lastVisit: "Ainda não atendido" };
+      setClients((current) => [createdClient, ...current]);
+      return { ok: true, message: "Cliente cadastrado.", client: createdClient };
     },
     addService: async (service) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;

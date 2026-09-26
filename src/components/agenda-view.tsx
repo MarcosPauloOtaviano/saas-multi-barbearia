@@ -19,7 +19,7 @@ export function AgendaView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const base = useAdminBase();
-  const { appointments, clients, services, barbers, addAppointment, addRecurringAppointments, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId, shopName } = useAppData();
+  const { appointments, clients, services, barbers, addAppointment, addRecurringAppointments, addClient, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId, shopName } = useAppData();
   const [view, setView] = useState<"day" | "week">("day");
   const [barberFilter, setBarberFilter] = useState(searchParams.get("barber") ?? currentBarberId ?? "all");
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
@@ -30,6 +30,8 @@ export function AgendaView() {
   const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsappTemplate>("confirmacao");
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const [recurringEnabled, setRecurringEnabled] = useState(false);
+  const [newClientMode, setNewClientMode] = useState(false);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [recurrenceInterval, setRecurrenceInterval] = useState("7");
   const [recurrenceDuration, setRecurrenceDuration] = useState("3");
   const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>(() => {
@@ -41,6 +43,10 @@ export function AgendaView() {
   const selected = appointments.find((item) => item.id === selectedId);
   const selectedClient = selected ? clients.find((client) => client.id === selected.clientId) : undefined;
   const [selectedDate, setSelectedDate] = useState(todayIso);
+  const showNewClientForm = newClientMode || clients.length === 0;
+  const selectedServicePreview = services.filter((service) => service.active && selectedServiceIds.includes(service.id));
+  const previewDuration = selectedServicePreview.reduce((total, service) => total + service.durationMinutes, 0);
+  const previewPrice = selectedServicePreview.reduce((total, service) => total + service.priceCents, 0);
   function shiftDate(offset: number) { const date = new Date(`${selectedDate}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + offset); setSelectedDate(date.toISOString().slice(0,10)); }
   const weekStart = new Date(`${selectedDate}T12:00:00Z`);
   weekStart.setUTCDate(weekStart.getUTCDate() - (weekStart.getUTCDay()+6)%7);
@@ -89,8 +95,12 @@ export function AgendaView() {
     const selectedServiceIds = data.getAll("serviceIds").map(String);
     const selectedServices = services.filter((item) => selectedServiceIds.includes(item.id) && item.active);
     const barber = barbers.find((item) => item.id === data.get("barber"));
-    const client = clients.find((item) => item.id === data.get("client"));
-    if (!selectedServices.length || !barber || !client) return;
+    let client = clients.find((item) => item.id === data.get("client"));
+    const creatingClient = showNewClientForm;
+    if (!selectedServices.length || !barber || (!client && !creatingClient)) {
+      setFeedback({ ok: false, message: "Selecione o cliente, serviço e barbeiro para continuar." });
+      return;
+    }
     const totalDuration = selectedServices.reduce((total, service) => total + service.durationMinutes, 0);
     const totalPrice = selectedServices.reduce((total, service) => total + service.priceCents, 0);
     const recurring = recurringEnabled;
@@ -108,6 +118,27 @@ export function AgendaView() {
     }
     setBusy(true);
     try {
+    if (creatingClient) {
+      const clientName = String(data.get("newClientName") ?? "").trim();
+      if (clientName.length < 2) {
+        setFeedback({ ok: false, message: "Digite o nome do cliente." });
+        return;
+      }
+      const clientPhone = String(data.get("newClientPhone") ?? "").trim();
+      if (clientPhone.replace(/\D/g, "").length < 8) {
+        setFeedback({ ok: false, message: "Digite um telefone ou WhatsApp válido para o cliente." });
+        return;
+      }
+      const normalizedPhone = clientPhone.replace(/\D/g, "");
+      client = clients.find((item) => item.phone.replace(/\D/g, "") === normalizedPhone);
+      const created = client ? { ok: true, message: "Cliente já cadastrado.", client } : await addClient({ name: clientName, phone: clientPhone, email: String(data.get("newClientEmail") ?? "").trim(), notes: "" });
+      if (!created.ok || !created.client) {
+        setFeedback({ ok: false, message: created.message });
+        return;
+      }
+      client = created.client;
+    }
+    if (!client) return;
     const result = recurring
       ? await addRecurringAppointments({ clientId: client.id, barberId: barber.id, serviceIds: selectedServices.map((service) => service.id), firstDate: String(data.get("date")), time: String(data.get("time")), intervalDays, durationMonths, weekdays })
       : await addAppointment({
@@ -120,6 +151,8 @@ export function AgendaView() {
     setFeedback(result);
     if (result.ok) {
       form.reset();
+      setNewClientMode(false);
+      setSelectedServiceIds([]);
       setRecurringEnabled(false);
       setRecurrenceWeekdays([]);
       setRecurrenceInterval("7");
@@ -178,8 +211,8 @@ export function AgendaView() {
           <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="novo-agendamento-titulo">
             <div className="modal-header"><div><p className="eyebrow">Agenda</p><h2 id="novo-agendamento-titulo">Novo agendamento</h2></div><button className="icon-button" onClick={() => setModalOpen(false)} aria-label="Fechar"><X /></button></div>
             <form className="form-grid" onSubmit={submitAppointment}>
-              <label className="field full"><span>Cliente</span><select name="client" required defaultValue={searchParams.get("cliente") ?? ""}><option value="" disabled>Selecione o cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select></label>
-              <label className="field full"><span>Serviços <small>(selecione um ou mais)</small></span><select name="serviceIds" required multiple size={Math.min(5, Math.max(3, services.filter((service) => service.active).length))}>{services.filter((service) => service.active).map((service) => <option value={service.id} key={service.id}>{service.name} · {service.durationMinutes} min · {formatCurrency(service.priceCents)}</option>)}</select></label>
+              <div className="field full client-field"><div className="field-heading"><span>Cliente</span>{clients.length > 0 && <button type="button" className="text-button" onClick={() => setNewClientMode((current) => !current)}>{showNewClientForm ? "Escolher cliente cadastrado" : "Cadastrar novo cliente"}</button>}</div>{showNewClientForm ? <><div className="new-client-fields"><input name="newClientName" placeholder="Nome completo" minLength={2} required autoFocus /><input name="newClientPhone" type="tel" placeholder="WhatsApp" required /><input name="newClientEmail" type="email" placeholder="E-mail (opcional)" /></div><small className="field-help">O cliente será cadastrado automaticamente junto com este agendamento.</small></> : <select name="client" required defaultValue={searchParams.get("cliente") ?? ""}><option value="" disabled>Selecione o cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select>}</div>
+              <fieldset className="field full service-picker"><legend>Serviços <small>(selecione um ou mais)</small></legend><div className="service-picker__grid">{services.filter((service) => service.active).map((service) => <label className={`service-option ${selectedServiceIds.includes(service.id) ? "is-selected" : ""}`} key={service.id}><input name="serviceIds" type="checkbox" value={service.id} checked={selectedServiceIds.includes(service.id)} onChange={(event) => setSelectedServiceIds((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><span><strong>{service.name}</strong><small>{service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b></label>)}</div>{selectedServicePreview.length > 0 && <div className="service-picker__summary"><span>{selectedServicePreview.length} {selectedServicePreview.length === 1 ? "serviço" : "serviços"}</span><span>{previewDuration} min · <strong>{formatCurrency(previewPrice)}</strong></span></div>}</fieldset>
               <label className="field full"><span>Barbeiro</span><select name="barber" required defaultValue={currentBarberId ?? ""}><option value="" disabled>Selecione o barbeiro</option>{barbers.filter((barber) => barber.active && (role !== "barber" || barber.id === currentBarberId)).map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>
               <label className="field"><span>Data</span><input name="date" type="date" defaultValue={selectedDate} min={todayIso} required /></label>
               <label className="field"><span>Horário</span><input name="time" type="time" required /></label>
