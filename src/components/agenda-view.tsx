@@ -13,12 +13,13 @@ const statusLabels: Record<AppointmentStatus, string> = {
   pending: "Aguardando", confirmed: "Confirmado", in_progress: "Em atendimento",
   completed: "Concluído", cancelled: "Cancelado", no_show: "Faltou",
 };
+type WhatsappTemplate = "confirmacao" | "lembrete" | "imprevisto";
 
 export function AgendaView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const base = useAdminBase();
-  const { appointments, clients, services, barbers, addAppointment, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId } = useAppData();
+  const { appointments, clients, services, barbers, addAppointment, updateAppointmentStatus, rescheduleAppointment, role, currentBarberId, shopName } = useAppData();
   const [view, setView] = useState<"day" | "week">("day");
   const [barberFilter, setBarberFilter] = useState(searchParams.get("barber") ?? currentBarberId ?? "all");
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
@@ -26,6 +27,7 @@ export function AgendaView() {
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [statusFeedback, setStatusFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsappTemplate>("confirmacao");
   const [nowMs, setNowMs] = useState(0);
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
@@ -62,6 +64,15 @@ export function AgendaView() {
   }
 
   function closeDetail() { router.push(`${base}/agenda`); }
+
+  function whatsappMessage() {
+    if (!selected) return "";
+    const dateLabel = selected.date.split("-").reverse().join("/");
+    const establishment = shopName || "barbearia";
+    if (whatsappTemplate === "lembrete") return `Olá, ${selected.clientName}! Aqui é da ${establishment}. Lembrando do seu atendimento de ${selected.serviceName} com ${selected.barberName} no dia ${dateLabel} às ${selected.time}. Se precisar alterar, responda por aqui.`;
+    if (whatsappTemplate === "imprevisto") return `Olá, ${selected.clientName}! Aqui é da ${establishment}. Precisamos falar sobre seu atendimento de ${selected.serviceName} no dia ${dateLabel} às ${selected.time}. Quando puder, responda por aqui.`;
+    return `Olá, ${selected.clientName}! Aqui é da ${establishment}. Recebemos sua solicitação de ${selected.serviceName} para o dia ${dateLabel} às ${selected.time} com ${selected.barberName}. Posso confirmar esse horário?`;
+  }
 
   async function submitAppointment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,7 +175,7 @@ export function AgendaView() {
             {selected.status !== "completed" && selected.status !== "no_show" && selected.status !== "cancelled" && !appointmentHasEnded(selected) && <p className="drawer-hint">A conclusão fica disponível depois do horário final do atendimento.</p>}
             {selected.status !== "no_show" && selected.status !== "cancelled" && appointmentHasEnded(selected) && <p className="drawer-hint">O sistema conclui este atendimento automaticamente. Se o cliente não compareceu, registre isso abaixo para manter o relatório correto.</p>}
             {statusFeedback && <p className={`form-feedback ${statusFeedback.ok ? "success" : "error"}`} role="status">{statusFeedback.message}</p>}
-            {selectedClient?.phone && <a className="button subtle drawer-whatsapp" href={`https://wa.me/${(selectedClient.phone.replace(/\D/g, "").startsWith("55") ? selectedClient.phone.replace(/\D/g, "") : `55${selectedClient.phone.replace(/\D/g, "")}`)}?text=${encodeURIComponent(`Olá, ${selected.clientName}! Aqui é da barbearia. Sobre seu atendimento de ${selected.date.split("-").reverse().join("/")} às ${selected.time}, precisamos falar com você.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Avisar pelo WhatsApp</a>}
+            {selectedClient?.phone && <div className="drawer-whatsapp-box"><div className="drawer-whatsapp-heading"><MessageCircle size={18} /><span><strong>Mensagem rápida</strong><small>Abre o WhatsApp com um texto pronto</small></span></div><label className="field"><span>Escolha o aviso</span><select value={whatsappTemplate} onChange={(event) => setWhatsappTemplate(event.target.value as WhatsappTemplate)}><option value="confirmacao">Confirmar horário</option><option value="lembrete">Lembrar atendimento</option><option value="imprevisto">Avisar imprevisto</option></select></label><a className="button subtle drawer-whatsapp" href={`https://wa.me/${(selectedClient.phone.replace(/\D/g, "").startsWith("55") ? selectedClient.phone.replace(/\D/g, "") : `55${selectedClient.phone.replace(/\D/g, "")}`)}?text=${encodeURIComponent(whatsappMessage())}`} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Abrir WhatsApp</a></div>}
             <div className="drawer-actions">
               {selected.status === "pending" && <button className="button primary" onClick={() => void changeStatus("confirmed")}><Check size={17} /> Confirmar</button>}
               {appointmentHasEnded(selected) && ["pending", "confirmed", "in_progress"].includes(selected.status) && <button className="button primary" onClick={() => void changeStatus("completed")}><Check size={17} /> Concluir atendimento</button>}

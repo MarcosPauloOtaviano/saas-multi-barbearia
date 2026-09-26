@@ -892,7 +892,7 @@ a { color: inherit; }
 .profile-photo-row { display: flex; align-items: center; gap: 16px; }
 .profile-photo-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .photo-remove { min-height: 38px; padding-inline: 12px; }
-.drawer-whatsapp { width: fit-content; margin: 2px 0 14px; color: #23734b; background: #e6f4ea; }
+.drawer-whatsapp-box { display: grid; gap: 10px; margin: 2px 0 14px; padding: 13px; border: 1px solid #d5e8db; border-radius: 15px; background: #f3fbf5; }.drawer-whatsapp-heading { display: flex; align-items: center; gap: 9px; color: #23734b; }.drawer-whatsapp-heading > span { display: grid; gap: 2px; }.drawer-whatsapp-heading strong { font-size: .72rem; }.drawer-whatsapp-heading small { color: #5e7b68; font-size: .59rem; }.drawer-whatsapp-box .field { gap: 5px; }.drawer-whatsapp-box .field span { font-size: .59rem; }.drawer-whatsapp-box select { min-height: 38px; }.drawer-whatsapp { width: fit-content; margin: 0; color: #23734b; background: #e6f4ea; }
 .operating-card h2 { margin: 24px 0 18px; }
 .management-shortcuts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
 .management-shortcuts a { border: 1px solid var(--line); background: white; border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600; font-size: .85rem; }
