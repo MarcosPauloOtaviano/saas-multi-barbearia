@@ -151,7 +151,7 @@ Deno.serve(async (request) => {
       const service = Array.isArray(appointment?.appointment_services) ? appointment?.appointment_services[0] : appointment?.appointment_services;
       if (client?.email) {
         try {
-          await sendEmail({ to: client.email, subject: `Agendamento recebido — ${shop.name}`, html: appointmentEmail({ shopName: shop.name, clientName: client.name, serviceName: service?.service_name ?? "atendimento", startsAt: new Date(appointment.starts_at).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }), token: result.response_token }) });
+          await sendEmail({ to: client.email, subject: `Agendamento recebido — ${shop.name}`, html: appointmentEmail({ shopName: shop.name, clientName: client.name, serviceName: service?.service_name ?? "atendimento", startsAt: new Date(appointment.starts_at).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }), token: result.response_token, kind: "confirmation" }) });
           emailSent = true;
           emailStatus = "sent";
         } catch (error) {

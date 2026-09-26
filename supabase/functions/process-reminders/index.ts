@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
-import { appointmentEmail, sendEmail } from "../_shared/email.ts";
+import { appointmentEmail, assertEmailConfigured, EmailDeliveryError, sendEmail } from "../_shared/email.ts";
 import { json, serviceClientConfig } from "../_shared/http.ts";
 
 function randomToken() {
@@ -26,6 +26,9 @@ Deno.serve(async (request) => {
     let failed = 0;
     for (const reminder of reminders ?? []) {
       try {
+        // Do not create one-time response tokens when delivery cannot be attempted.
+        // This keeps a missing provider from leaving orphaned tokens on every retry.
+        assertEmailConfigured();
         const { data: appointment, error } = await supabase
           .from("appointments")
           .select("id, starts_at, ends_at, clients(name,email), barbershops(name), appointment_services(service_name)")
@@ -50,15 +53,16 @@ Deno.serve(async (request) => {
         const result = await sendEmail({
           to: client.email,
           subject: `Lembrete de atendimento — ${shop?.name ?? "Barbearia"}`,
-          html: appointmentEmail({ shopName: shop?.name ?? "Barbearia", clientName: client.name, serviceName: service?.service_name ?? "atendimento", startsAt: new Date(appointment.starts_at).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }), token }),
+          html: appointmentEmail({ shopName: shop?.name ?? "Barbearia", clientName: client.name, serviceName: service?.service_name ?? "atendimento", startsAt: new Date(appointment.starts_at).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }), token, kind: "reminder" }),
         });
         await supabase.from("appointment_reminders").update({ status: "sent", sent_at: new Date().toISOString(), last_error: null }).eq("id", reminder.id);
         await supabase.from("reminder_deliveries").insert({ barbershop_id: reminder.barbershop_id, reminder_id: reminder.id, provider: "resend", provider_message_id: result.id ?? null, success: true });
         sent += 1;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown reminder failure";
+        const errorCode = error instanceof EmailDeliveryError ? error.code : "unknown";
         await supabase.from("appointment_reminders").update({ status: reminder.attempt_count >= 5 ? "failed" : "pending", last_error: message.slice(0, 500) }).eq("id", reminder.id);
-        await supabase.from("reminder_deliveries").insert({ barbershop_id: reminder.barbershop_id, reminder_id: reminder.id, provider: "resend", success: false, error_message: message.slice(0, 500) });
+        await supabase.from("reminder_deliveries").insert({ barbershop_id: reminder.barbershop_id, reminder_id: reminder.id, provider: "resend", success: false, error_code: errorCode, error_message: message.slice(0, 500) });
         failed += 1;
       }
     }
