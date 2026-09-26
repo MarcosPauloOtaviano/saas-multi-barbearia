@@ -253,10 +253,10 @@ a { color: inherit; }
 .service-option:hover { background: #fffaf7; }
 .service-option.is-selected { background: #fff3ec; }
 .service-option input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--copper); }
-.service-option > span { display: grid; min-width: 0; gap: 3px; }
+.service-option > span { display: grid; flex: 1 1 auto; min-width: 0; gap: 3px; }
 .service-option strong { overflow: hidden; color: var(--ink); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
 .service-option small { color: var(--muted); font-size: .62rem; }
-.service-option b { margin-left: auto; color: var(--copper-dark); font-size: .7rem; white-space: nowrap; }
+.service-option b { flex: 0 0 auto; margin-left: auto; color: var(--copper-dark); font-size: .7rem; white-space: nowrap; }
 .service-picker__summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border: 1px solid #eadbd3; border-radius: 13px; color: #5a4033; background: #fff8f4; font-size: .65rem; }
 .service-picker__summary > div { display: grid; min-width: 0; gap: 3px; }
 .service-picker__summary strong { overflow: hidden; color: var(--copper-dark); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
@@ -272,6 +272,7 @@ a { color: inherit; }
 .production-card__metrics span { color: var(--muted); font-size: .59rem; }
 .personal-production-card { grid-column: 1 / -1; }
 .field input, .field select, .field textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #dbe0da; border-radius: 11px; outline: none; color: var(--ink); background: white; font-size: 0.78rem; }
+.service-picker .service-option input[type="checkbox"] { width: 19px; min-width: 19px; height: 19px; min-height: 19px; margin: 0; padding: 0; border: 0; border-radius: 4px; box-shadow: none; }
 .field textarea { resize: vertical; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--copper); box-shadow: 0 0 0 3px rgb(200 111 69 / 0.1); }
 .recurrence-toggle { display: flex; align-items: flex-start; gap: 10px; padding: 13px 14px; border: 1px solid #e8d7ce; border-radius: 14px; color: var(--pine); background: #fffaf7; cursor: pointer; }
