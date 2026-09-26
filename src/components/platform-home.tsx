@@ -8,18 +8,17 @@ import { useEffect, useRef, useState } from "react";
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { eyebrow: "01 / Do alto", title: "Tudo começa de longe.", copy: "A cidade, a rua e o seu espaço no centro da experiência.", image: "/images/barberflow-scene-00-aerea.png" },
-  { eyebrow: "02 / Na rua", title: "Encontre seu horário.", copy: "Uma entrada simples para quem chega pelo celular.", image: "/images/barberflow-scene-01-semi-realista.png" },
-  { eyebrow: "03 / Na entrada", title: "Sua marca em destaque.", copy: "Cada estabelecimento tem seu próprio espaço.", image: "/images/barberflow-scene-02-semi-realista.png" },
-  { eyebrow: "04 / No corte", title: "A agenda no lugar.", copy: "Cliente e equipe enxergam só o que importa.", image: "/images/barberflow-scene-03-semi-realista.png" },
+  { image: "/images/barberflow-scene-00-aerea.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-01-aproximacao.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-03-porta.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
+  { image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
 ];
 
 export function PlatformHome() {
   const heroRef = useRef<HTMLElement>(null);
   const [sceneProgress, setSceneProgress] = useState(0);
   const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
-  const scene = scenes[sceneIndex];
-  const sceneFocus = ["52% center", "28% center", "52% center", "78% center"];
 
   useEffect(() => {
     function updateScene() {
@@ -54,8 +53,8 @@ export function PlatformHome() {
             const distance = Math.abs(sceneProgress - center);
             const opacity = Math.max(0, 1 - distance * 2.55);
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
-            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.33) * -3 : index === 2 ? (sceneProgress - 0.66) * -2 : (sceneProgress - 1) * -2;
-            return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: sceneFocus[index] }}>
+            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.25) * -3 : index === 2 ? (sceneProgress - 0.5) * -2 : index === 3 ? (sceneProgress - 0.75) * -2 : (sceneProgress - 1) * -2;
+            return <div className="cinematic-hero__media" key={item.image} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}>
               <Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" />
             </div>;
           })}
@@ -73,13 +72,7 @@ export function PlatformHome() {
           </div>
         </div>
 
-        <div className="cinematic-story" aria-live="polite">
-          <div className="cinematic-story__line"><span style={{ transform: `scaleY(${Math.max(0.08, sceneProgress)})` }} /></div>
-          <div className="cinematic-story__copy"><p>{scene.eyebrow}</p><h2>{scene.title}</h2><span>{scene.copy}</span></div>
-          <div className="cinematic-story__steps" aria-label="Etapas da experiência">
-            {scenes.map((item, index) => <span className={sceneIndex === index ? "is-active" : ""} key={item.eyebrow}><i>{String(index + 1).padStart(2, "0")}</i>{item.eyebrow.replace(/^\d+ \/ /, "")}</span>)}
-          </div>
-        </div>
+        <div className="cinematic-progress" aria-label={`Progresso da apresentação: cena ${sceneIndex + 1} de ${scenes.length}`}><span style={{ transform: `scaleX(${Math.max(0.04, sceneProgress)})` }} /></div>
         <a className="cinematic-scroll" href="#contato" aria-label="Rolar para ver contato"><span>Deslize para entrar</span><i /></a>
       </div>
     </section>

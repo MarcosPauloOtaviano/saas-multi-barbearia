@@ -20,13 +20,13 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
   const heroRef = useRef<HTMLElement>(null);
   const [sceneProgress, setSceneProgress] = useState(0);
   const scenes = [
-    { eyebrow: "01 / Do alto", title: `${name} começa de longe.`, copy: "Uma chegada cinematográfica que encontra o seu espaço no meio da cidade.", image: "/images/barberflow-scene-00-aerea.png", focus: "52% center" },
-    { eyebrow: "02 / Na chegada", title: `${name} começa no primeiro clique.`, copy: "Uma página bonita para o cliente encontrar seu espaço e reservar sem perder tempo.", image: "/images/barberflow-scene-01-semi-realista.png", focus: "28% center" },
-    { eyebrow: "03 / No seu espaço", title: "O cliente encontra o seu lugar.", copy: `${name} tem seu próprio endereço, equipe, serviços e agenda, tudo no mesmo fluxo.`, image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
-    { eyebrow: "04 / No corte", title: "A equipe cuida do resto.", copy: `A equipe de ${name} trabalha com horários claros e um atendimento que termina bem.`, image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
+    { image: "/images/barberflow-scene-00-aerea.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-01-aproximacao.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-03-porta.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
+    { image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
   ];
   const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
-  const scene = scenes[sceneIndex];
 
   useEffect(() => {
     function updateScene() {
@@ -54,8 +54,8 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
             const distance = Math.abs(sceneProgress - center);
             const opacity = Math.max(0, 1 - distance * 2.55);
             const scale = 1.04 + index * 0.06 + sceneProgress * (index === 0 ? 0.06 : 0.12);
-            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.33) * -3 : index === 2 ? (sceneProgress - 0.66) * -2 : (sceneProgress - 1) * -2;
-            return <div className="cinematic-hero__media" key={item.eyebrow} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}><Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" /></div>;
+            const x = index === 0 ? sceneProgress * -2 : index === 1 ? (sceneProgress - 0.25) * -3 : index === 2 ? (sceneProgress - 0.5) * -2 : index === 3 ? (sceneProgress - 0.75) * -2 : (sceneProgress - 1) * -2;
+            return <div className="cinematic-hero__media" key={item.image} style={{ opacity, transform: `scale(${scale}) translate3d(${x}%, ${sceneProgress * -2.5}%, 0)`, ["--scene-focus" as string]: item.focus }}><Image src={item.image} alt="" fill priority={index === 0} sizes="100vw" /></div>;
           })}
         </div>
         <div className="cinematic-hero__veil" />
@@ -66,11 +66,7 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
           <p className="cinematic-hero__lead">Escolha o serviço, o profissional e um horário disponível. Sem cadastro obrigatório e com confirmação segura.</p>
           <div className="cinematic-hero__actions"><Link className="button cinematic-button" href={bookingHref}><span>Agendar meu horário</span><ArrowRight /></Link><Link className="cinematic-login" href={servicesHref}>Ver serviços <ArrowRight /></Link></div>
         </div>
-        <div className="cinematic-story" aria-live="polite">
-          <div className="cinematic-story__line"><span style={{ transform: `scaleY(${Math.max(0.08, sceneProgress)})` }} /></div>
-          <div className="cinematic-story__copy"><p>{scene.eyebrow}</p><h2>{scene.title}</h2><span>{scene.copy}</span></div>
-          <div className="cinematic-story__steps" aria-label="Etapas da experiência">{scenes.map((item, index) => <span className={sceneIndex === index ? "is-active" : ""} key={item.eyebrow}><i>{String(index + 1).padStart(2, "0")}</i>{item.eyebrow.replace(/^\d+ \/ /, "")}</span>)}</div>
-        </div>
+        <div className="cinematic-progress" aria-label={`Progresso da apresentação: cena ${sceneIndex + 1} de ${scenes.length}`}><span style={{ transform: `scaleX(${Math.max(0.04, sceneProgress)})` }} /></div>
         <a className="cinematic-scroll" href="#customer-services" aria-label="Rolar para ver os serviços"><span>Deslize para entrar</span><i /></a>
       </div>
     </section>
