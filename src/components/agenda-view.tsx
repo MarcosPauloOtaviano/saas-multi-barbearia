@@ -25,6 +25,7 @@ export function AgendaView() {
   const [modalOpen, setModalOpen] = useState(searchParams.get("novo") === "1");
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [statusFeedback, setStatusFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsappTemplate>("confirmacao");
@@ -96,6 +97,7 @@ export function AgendaView() {
   async function submitAppointment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    setSuccessNotice(null);
     const form = event.currentTarget;
     const data = new FormData(form);
     const selectedServiceIds = data.getAll("serviceIds").map(String);
@@ -156,6 +158,7 @@ export function AgendaView() {
       });
     setFeedback(result);
     if (result.ok) {
+      setSuccessNotice(result.message);
       form.reset();
       setNewClientMode(false);
       setSelectedServiceIds([]);
@@ -165,7 +168,8 @@ export function AgendaView() {
       setRecurrenceInterval("7");
       setRecurrenceDuration("3");
       setSelectedDate(String(data.get("date")));
-      window.setTimeout(() => { closeAppointmentModal(); router.push(`${base}/agenda`); }, 900);
+      window.setTimeout(() => { closeAppointmentModal(); router.push(`${base}/agenda`); }, 1800);
+      window.setTimeout(() => setSuccessNotice(null), 6000);
     }
     } catch { setFeedback({ok:false,message:"A conexão falhou. Tente novamente."}); } finally { setBusy(false); }
   }
@@ -180,7 +184,8 @@ export function AgendaView() {
 
   return (
     <>
-      <PageTitle eyebrow="Operação" title="Agenda" description="Horários, confirmações e encaixes em um só lugar." action={<button className="button primary" onClick={() => setModalOpen(true)}><Plus size={18} /> Novo agendamento</button>} />
+      <PageTitle eyebrow="Operação" title="Agenda" description="Horários, confirmações e encaixes em um só lugar." action={<button className="button primary" onClick={() => { setSuccessNotice(null); setModalOpen(true); }}><Plus size={18} /> Novo agendamento</button>} />
+      {successNotice && <div className="agenda-success-toast" role="status"><Check size={18} /><span>{successNotice}</span><button type="button" className="agenda-success-toast__close" onClick={() => setSuccessNotice(null)} aria-label="Fechar aviso"><X size={16} /></button></div>}
 
       <section className="toolbar-card">
         <div className="segmented" aria-label="Visualização da agenda">

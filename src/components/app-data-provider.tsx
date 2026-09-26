@@ -435,7 +435,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
       const serviceIds = input.serviceIds.filter(Boolean);
       if (!serviceIds.length) return { ok: false, message: "Selecione pelo menos um serviço." };
-      const { data, error } = await createClient().rpc("create_recurring_internal_appointments", {
+      const db = createClient();
+      const { data, error } = await db.rpc("create_recurring_internal_appointments", {
         target_barbershop_id: remoteTenantId.current,
         selected_service_ids: serviceIds,
         selected_barber_id: input.barberId,
@@ -453,8 +454,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         }
         return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente." };
       }
+      const createdCount = Number(data?.created_count ?? 0);
+      const recurrenceId = String(data?.series_id ?? "");
+      if (recurrenceId && createdCount > 0) {
+        const { data: confirmedRows, error: confirmationError } = await db
+          .from("appointments")
+          .update({ status: "confirmed" })
+          .eq("barbershop_id", remoteTenantId.current)
+          .eq("recurrence_id", recurrenceId)
+          .select("id");
+        if (confirmationError || (confirmedRows?.length ?? 0) !== createdCount) {
+          return { ok: false, message: "Os horários foram criados, mas não foi possível confirmar todos. Atualize a agenda antes de tentar novamente." };
+        }
+      }
       window.dispatchEvent(new Event("barberflow:refresh"));
-      return { ok: true, message: `${Number(data?.created_count ?? 0)} agendamentos recorrentes criados.`, createdCount: Number(data?.created_count ?? 0) };
+      return { ok: true, message: `${createdCount} ${createdCount === 1 ? "agendamento" : "agendamentos"} recorrente${createdCount === 1 ? "" : "s"} criado${createdCount === 1 ? "" : "s"} com sucesso e confirmado${createdCount === 1 ? "" : "s"}.`, createdCount };
     },
     updateAppointmentStatus: async (id, status) => {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;

@@ -298,6 +298,10 @@ a { color: inherit; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 7px; }
 .form-feedback { display: flex; align-items: center; gap: 7px; margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
 .form-feedback.success { color: #216a48; background: #e5f4eb; }.form-feedback.error { color: #963f35; background: #fdecea; }
+.agenda-success-toast { display: flex; align-items: center; gap: 9px; margin: -8px 0 16px; padding: 12px 14px; border: 1px solid #c8e5d2; border-radius: 14px; color: #216a48; background: #effaf3; font-size: .72rem; font-weight: 750; box-shadow: 0 8px 22px rgb(31 106 72 / .07); }
+.agenda-success-toast span { flex: 1; }
+.agenda-success-toast__close { width: 28px; height: 28px; display: grid; place-items: center; flex: none; border: 0; border-radius: 8px; color: #4d8062; background: transparent; cursor: pointer; }
+.agenda-success-toast__close:hover { background: rgb(33 106 72 / .08); }
 .drawer-backdrop { justify-items: end; }
 .detail-drawer { width: min(100%, 410px); height: 100dvh; overflow: auto; padding: 25px; background: white; box-shadow: -20px 0 60px rgb(10 22 19 / 0.18); }
 .detail-list { display: grid; gap: 0; margin: 0; }
