@@ -8,9 +8,9 @@ import { useEffect, useRef, useState } from "react";
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
 
 const scenes = [
-  { eyebrow: "01 / Na rua", title: "Encontre seu horário.", copy: "Uma entrada simples para quem chega pelo celular.", image: "/images/barberflow-scene-01.png" },
-  { eyebrow: "02 / Na entrada", title: "Sua marca em destaque.", copy: "Cada estabelecimento tem seu próprio espaço.", image: "/images/barberflow-scene-02.png" },
-  { eyebrow: "03 / No corte", title: "A agenda no lugar.", copy: "Cliente e equipe enxergam só o que importa.", image: "/images/barberflow-scene-03.png" },
+  { eyebrow: "01 / Na rua", title: "Encontre seu horário.", copy: "Uma entrada simples para quem chega pelo celular.", image: "/images/barberflow-scene-01-semi-realista.png" },
+  { eyebrow: "02 / Na entrada", title: "Sua marca em destaque.", copy: "Cada estabelecimento tem seu próprio espaço.", image: "/images/barberflow-scene-02-semi-realista.png" },
+  { eyebrow: "03 / No corte", title: "A agenda no lugar.", copy: "Cliente e equipe enxergam só o que importa.", image: "/images/barberflow-scene-03-semi-realista.png" },
 ];
 
 export function PlatformHome() {

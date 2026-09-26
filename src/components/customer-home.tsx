@@ -21,9 +21,9 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
   const [sceneProgress, setSceneProgress] = useState(0);
   const sceneIndex = Math.min(2, Math.floor(sceneProgress * 3));
   const scenes = [
-    { eyebrow: "01 / Na chegada", title: `${name} começa no primeiro clique.`, copy: "Uma página bonita para o cliente encontrar seu espaço e reservar sem perder tempo.", image: "/images/barberflow-scene-01.png", focus: "28% center" },
-    { eyebrow: "02 / No seu espaço", title: "O cliente encontra o seu lugar.", copy: `${name} tem seu próprio endereço, equipe, serviços e agenda, tudo no mesmo fluxo.`, image: "/images/barberflow-scene-02.png", focus: "52% center" },
-    { eyebrow: "03 / No corte", title: "A equipe cuida do resto.", copy: `A equipe de ${name} trabalha com horários claros e um atendimento que termina bem.`, image: "/images/barberflow-scene-03.png", focus: "78% center" },
+    { eyebrow: "01 / Na chegada", title: `${name} começa no primeiro clique.`, copy: "Uma página bonita para o cliente encontrar seu espaço e reservar sem perder tempo.", image: "/images/barberflow-scene-01-semi-realista.png", focus: "28% center" },
+    { eyebrow: "02 / No seu espaço", title: "O cliente encontra o seu lugar.", copy: `${name} tem seu próprio endereço, equipe, serviços e agenda, tudo no mesmo fluxo.`, image: "/images/barberflow-scene-02-semi-realista.png", focus: "52% center" },
+    { eyebrow: "03 / No corte", title: "A equipe cuida do resto.", copy: `A equipe de ${name} trabalha com horários claros e um atendimento que termina bem.`, image: "/images/barberflow-scene-03-semi-realista.png", focus: "78% center" },
   ];
   const scene = scenes[sceneIndex];
 
