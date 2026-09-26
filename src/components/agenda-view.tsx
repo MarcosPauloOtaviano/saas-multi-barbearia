@@ -78,6 +78,11 @@ export function AgendaView() {
   }
 
   function closeDetail() { router.push(`${base}/agenda`); }
+  function closeAppointmentModal() {
+    setModalOpen(false);
+    setServicesOpen(false);
+    setFeedback(null);
+  }
 
   function whatsappMessage() {
     if (!selected) return "";
@@ -160,7 +165,7 @@ export function AgendaView() {
       setRecurrenceInterval("7");
       setRecurrenceDuration("3");
       setSelectedDate(String(data.get("date")));
-      window.setTimeout(() => { setModalOpen(false); setFeedback(null); router.push(`${base}/agenda`); }, 900);
+      window.setTimeout(() => { closeAppointmentModal(); router.push(`${base}/agenda`); }, 900);
     }
     } catch { setFeedback({ok:false,message:"A conexão falhou. Tente novamente."}); } finally { setBusy(false); }
   }
@@ -209,9 +214,9 @@ export function AgendaView() {
       )}
 
       {modalOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAppointmentModal(); }}>
           <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="novo-agendamento-titulo">
-            <div className="modal-header"><div><p className="eyebrow">Agenda</p><h2 id="novo-agendamento-titulo">Novo agendamento</h2></div><button className="icon-button" onClick={() => setModalOpen(false)} aria-label="Fechar"><X /></button></div>
+            <div className="modal-header"><div><p className="eyebrow">Agenda</p><h2 id="novo-agendamento-titulo">Novo agendamento</h2></div><button className="icon-button" onClick={closeAppointmentModal} aria-label="Fechar"><X /></button></div>
             <form className="form-grid" onSubmit={submitAppointment}>
               <div className="field full client-field"><div className="field-heading"><span>Cliente</span>{clients.length > 0 && <button type="button" className="text-button" onClick={() => setNewClientMode((current) => !current)}>{showNewClientForm ? "Escolher cliente cadastrado" : "Cadastrar novo cliente"}</button>}</div>{showNewClientForm ? <><div className="new-client-fields"><input name="newClientName" placeholder="Nome completo" minLength={2} required autoFocus /><input name="newClientPhone" type="tel" placeholder="WhatsApp" required /><input name="newClientEmail" type="email" placeholder="E-mail (opcional)" /></div><small className="field-help">O cliente será cadastrado automaticamente junto com este agendamento.</small></> : <select name="client" required defaultValue={searchParams.get("cliente") ?? ""}><option value="" disabled>Selecione o cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select>}</div>
               <fieldset className="field full service-picker"><legend>Serviços</legend><div className="service-picker__summary"><div><strong>{selectedServicePreview.length ? `${selectedServicePreview.length} ${selectedServicePreview.length === 1 ? "serviço escolhido" : "serviços escolhidos"}` : "Nenhum serviço escolhido"}</strong><small>{selectedServicePreview.length ? `${previewDuration} min · ${formatCurrency(previewPrice)}` : "Toque para escolher o que será feito"}</small></div><button type="button" className="service-picker__toggle" onClick={() => setServicesOpen((current) => !current)}>{servicesOpen ? "Fechar" : selectedServicePreview.length ? "Editar" : "Escolher"}</button></div>{!servicesOpen && selectedServiceIds.map((id) => <input key={id} type="hidden" name="serviceIds" value={id} />)}{servicesOpen && <div className="service-picker__grid">{services.filter((service) => service.active).map((service) => <label className={`service-option ${selectedServiceIds.includes(service.id) ? "is-selected" : ""}`} key={service.id}><input name="serviceIds" type="checkbox" value={service.id} checked={selectedServiceIds.includes(service.id)} onChange={(event) => setSelectedServiceIds((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><span><strong>{service.name}</strong><small>{service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b></label>)}</div>}</fieldset>
@@ -230,7 +235,7 @@ export function AgendaView() {
                 <p className="recurrence-hint">{recurrenceWeekdays.length ? "Os dias marcados serão repetidos na cadência escolhida." : "Sem dias marcados, o sistema repete exatamente a cada intervalo escolhido."}</p>
               </div>}
               {feedback && <p className={`form-feedback full ${feedback.ok ? "success" : "error"}`}>{feedback.ok ? <Check size={17} /> : <CircleX size={17} />}{feedback.message}</p>}
-              <div className="modal-actions full"><button type="button" className="button ghost" onClick={() => setModalOpen(false)}>Cancelar</button><button className="button primary" type="submit" disabled={busy}>{busy?"Salvando…":"Criar agendamento"}</button></div>
+              <div className="modal-actions full"><button type="button" className="button ghost" onClick={closeAppointmentModal}>Cancelar</button><button className="button primary" type="submit" disabled={busy}>{busy?"Salvando…":"Criar agendamento"}</button></div>
             </form>
           </section>
         </div>
