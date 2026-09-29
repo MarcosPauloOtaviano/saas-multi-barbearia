@@ -72,6 +72,15 @@ type AppDataContextValue = {
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 const unavailable = { ok: false, message: "O banco de produção ainda não está conectado." };
+function scheduleSaveError(error: { code?: string; message?: string; details?: string } | null) {
+  if (!error) return "Não foi possível salvar os horários. Tente novamente.";
+  const raw = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+  if (error.code === "42501" || raw.includes("not authorized") || raw.includes("permission")) return "Seu perfil não tem permissão para alterar os horários deste profissional.";
+  if (error.code === "22023" || raw.includes("invalid schedule") || raw.includes("horário inválido")) return "Confira os dias abertos, os horários de início e fim e a pausa para almoço.";
+  if (error.code === "23514" || raw.includes("working_hours_break_valid") || raw.includes("check constraint")) return "A pausa precisa começar depois da abertura, terminar antes do fechamento e ter início menor que o fim.";
+  if (error.code === "PGRST202" || raw.includes("could not find the function")) return "A configuração de horários ainda não foi atualizada no banco. Avise o responsável pelo sistema.";
+  return "Não foi possível salvar os horários. Confira os dados e tente novamente.";
+}
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -391,7 +400,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     saveShopSchedule: async (schedule, paused) => {
       if (!remoteTenantId.current) return unavailable;
       const { error } = await createClient().rpc('save_operating_schedule',{ target_barbershop_id:remoteTenantId.current,target_barber_id:null,schedule:schedule.map(d=>({weekday:d.weekday,starts_at:d.startsAt,ends_at:d.endsAt,active:d.active,break_start:null,break_end:null})),paused });
-      if(error) return {ok:false,message:'Não foi possível salvar. Confira os horários de abertura e fechamento.'};
+      if(error) return {ok:false,message:scheduleSaveError(error)};
       setShopHours(schedule); setBookingPaused(paused);
       return {ok:true,message:'Funcionamento salvo.'};
     },
@@ -602,7 +611,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         target_barber_id: barberId,
         schedule: schedule.map(({ weekday, startsAt, endsAt, active, breakStart, breakEnd }) => ({ weekday, starts_at: startsAt, ends_at: endsAt, active, break_start: breakStart, break_end: breakEnd })),
       });
-      if (error) return { ok: false, message: error.code === "42501" ? "Seu perfil não pode ajustar horários." : "Não foi possível salvar os horários." };
+      if (error) return { ok: false, message: scheduleSaveError(error) };
       setWorkingHours((current) => [...current.filter((item) => item.barberId !== barberId), ...schedule.map((item) => ({ ...item, barberId }))]);
       return { ok: true, message: "Horários salvos." };
     },
