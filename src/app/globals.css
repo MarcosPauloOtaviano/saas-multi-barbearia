@@ -1068,3 +1068,14 @@ a { color: inherit; }
   .toolbar-card { min-width: 0; }
   .profile-photo-row { flex-wrap: wrap; }
 }
+
+/* Acabamento final do painel no celular: cards de gestão com leitura confortável. */
+@media (max-width: 759px) {
+  .management-shortcuts { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .management-shortcuts-card { gap: 12px; margin-bottom: 18px; padding: 14px; border-radius: 18px; }
+  .management-shortcuts-card__heading > span { display: none; }
+  .management-shortcuts a { padding: 9px 8px; border-radius: 12px; }
+  .management-shortcuts__icon { width: 29px; height: 29px; border-radius: 9px; }
+  .management-shortcuts strong { font-size: .63rem; }
+  .management-shortcuts small { font-size: .54rem; }
+}
