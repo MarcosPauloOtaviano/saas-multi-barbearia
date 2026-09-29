@@ -53,8 +53,13 @@ export function AgendaView() {
   const weekStart = new Date(`${selectedDate}T12:00:00Z`);
   weekStart.setUTCDate(weekStart.getUTCDate() - (weekStart.getUTCDay()+6)%7);
   const weekDates = Array.from({length:7},(_,i)=>{const date=new Date(weekStart);date.setUTCDate(date.getUTCDate()+i);return date.toISOString().slice(0,10);});
+  const weekCounts = Object.fromEntries(weekDates.map((day) => [day, appointments.filter((item) => item.date === day && item.status !== "cancelled" && (barberFilter === "all" || item.barberId === barberFilter)).length]));
+  const weekTotal = weekDates.reduce((total, day) => total + (weekCounts[day] ?? 0), 0);
+  const weekMaxCount = Math.max(1, ...weekDates.map((day) => weekCounts[day] ?? 0));
+  const selectedDateLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${selectedDate}T12:00:00Z`));
+  const weekLabel = `${new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${weekDates[0]}T12:00:00Z`))} – ${new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${weekDates[6]}T12:00:00Z`))}`;
   const today = useMemo(() => appointments
-    .filter((item) => item.date === selectedDate && (barberFilter === "all" || item.barberId === barberFilter))
+    .filter((item) => item.date === selectedDate && item.status !== "cancelled" && (barberFilter === "all" || item.barberId === barberFilter))
     .sort((a, b) => a.time.localeCompare(b.time)), [appointments, barberFilter, selectedDate]);
 
   useEffect(() => {
@@ -196,9 +201,25 @@ export function AgendaView() {
         {role !== "barber" && <label className="select-control"><Filter size={16} /><select value={barberFilter} onChange={(event) => setBarberFilter(event.target.value)} aria-label="Filtrar por barbeiro"><option value="all">Todos os barbeiros</option>{barbers.map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>}
       </section>
 
+      <section className="agenda-overview" aria-label="Resumo da agenda">
+        <div className="agenda-overview__primary">
+          <span className="agenda-overview__icon"><CalendarDays size={21} /></span>
+          <div>
+            <p className="eyebrow">{view === "week" ? "Resumo da semana" : "Dia selecionado"}</p>
+            <strong>{view === "week" ? weekTotal : today.length} <small>{view === "week" ? (weekTotal === 1 ? "pessoa agendada" : "pessoas agendadas") : (today.length === 1 ? "pessoa neste dia" : "pessoas neste dia")}</small></strong>
+            <span className="agenda-overview__date">{view === "week" ? weekLabel : selectedDateLabel}</span>
+          </div>
+        </div>
+        <div className="agenda-overview__secondary">
+          <span>{view === "week" ? "Dia selecionado" : "Total da semana"}</span>
+          <b>{view === "week" ? (weekCounts[selectedDate] ?? 0) : weekTotal}</b>
+          <small>{view === "week" ? selectedDateLabel : weekLabel}</small>
+        </div>
+      </section>
+
       {view === "day" ? (
         <section className="agenda-board">
-          <div className="agenda-board__header"><span>{today.length} agendamentos</span><span><i className="legend-dot confirmed" /> Confirmado <i className="legend-dot pending" /> Aguardando</span></div>
+          <div className="agenda-board__header"><span>{today.length} {today.length === 1 ? "pessoa agendada" : "pessoas agendadas"}</span><span><i className="legend-dot confirmed" /> Confirmado <i className="legend-dot pending" /> Aguardando</span></div>
           <div className="timeline">
             {today.map((item) => (
               <button className={`timeline-card status-${item.status}`} onClick={() => router.push(`${base}/agenda?appointment=${item.id}`)} key={item.id}>
@@ -214,7 +235,17 @@ export function AgendaView() {
         </section>
       ) : (
         <section className="week-board">
-          {weekDates.map(day => <button className={`week-day ${day===todayIso?"is-today":""}`} key={day} onClick={()=>{setSelectedDate(day);setView("day");}}><strong>{new Intl.DateTimeFormat("pt-BR",{weekday:"short",day:"numeric",timeZone:"UTC"}).format(new Date(`${day}T12:00:00Z`))}</strong><span>{appointments.filter(a=>a.date===day&&a.status!=="cancelled"&&(barberFilter==="all"||a.barberId===barberFilter)).length} atendimentos</span><small>{day===todayIso?"Hoje":"Ver dia"}</small></button>)}
+          {weekDates.map((day) => {
+            const dayCount = weekCounts[day] ?? 0;
+            const barHeight = dayCount ? Math.max(12, Math.round((dayCount / weekMaxCount) * 100)) : 0;
+            const selectedDay = day === selectedDate;
+            return <button className={`week-day ${day === todayIso ? "is-today" : ""} ${selectedDay ? "is-selected" : ""}`} key={day} onClick={() => { setSelectedDate(day); setView("day"); }}>
+              <strong className="week-day__label">{new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`))}</strong>
+              <span className="week-day__count">{dayCount}<small>{dayCount === 1 ? "pessoa" : "pessoas"}</small></span>
+              <span className="week-day__meter" aria-hidden="true"><i style={{ height: `${barHeight}%` }} /></span>
+              <small className="week-day__action">{selectedDay ? "Selecionado" : day === todayIso ? "Hoje" : "Ver dia"}</small>
+            </button>;
+          })}
         </section>
       )}
 
