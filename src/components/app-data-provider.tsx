@@ -78,9 +78,9 @@ function scheduleSaveError(error: { code?: string; message?: string; details?: s
   if (error.code === "42501" || raw.includes("not authorized") || raw.includes("permission")) return "Seu perfil não tem permissão para alterar os horários deste profissional.";
   if (error.code === "22023" || raw.includes("invalid schedule") || raw.includes("horário inválido")) return "Confira os dias abertos, os horários de início e fim e a pausa para almoço.";
   if (error.code === "23514" || raw.includes("working_hours_break_valid") || raw.includes("check constraint")) return "A pausa precisa começar depois da abertura, terminar antes do fechamento e ter início menor que o fim.";
+  if (raw.includes("insert has more target columns than expressions")) return "A rotina de horários do banco está desatualizada. Atualize a página e tente salvar novamente.";
   if (error.code === "PGRST202" || raw.includes("could not find the function")) return "A configuração de horários ainda não foi atualizada no banco. Avise o responsável pelo sistema.";
-  const detail = error.message?.trim();
-  return detail ? `Não foi possível salvar os horários: ${detail}` : "Não foi possível salvar os horários. Confira os dados e tente novamente.";
+  return "Não foi possível salvar os horários. Confira os dados e tente novamente.";
 }
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
