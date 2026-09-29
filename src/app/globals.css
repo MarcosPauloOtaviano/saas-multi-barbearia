@@ -100,7 +100,9 @@ button { color: inherit; }
   .rail-brand strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
   .rail-brand small { color: #8fa7a0; font-size: .58rem; }
   .brand-mark { width: 44px; height: 44px; display: grid; place-items: center; flex: none; border-radius: 14px; color: #ffe9df; background: var(--copper); transform: rotate(-3deg); }
-  .rail-nav { display: grid; gap: 4px; margin: 35px 0 auto; }
+  .rail-nav { display: grid; gap: 19px; margin: 30px 0 auto; }
+  .rail-nav-group { display: grid; gap: 4px; }
+  .rail-nav-group > p { margin: 0 12px 5px; color: #668078; font-size: .55rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
   .rail-link { position: relative; width: 100%; min-height: 43px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 13px; color: #8aa099; text-decoration: none; font-size: .7rem; font-weight: 700; }
   .rail-link svg { width: 19px; flex: none; }
   .rail-link:hover { color: #e3efeb; background: rgb(255 255 255 / .06); }
@@ -110,11 +112,11 @@ button { color: inherit; }
   .workspace { padding: 46px 40px 60px; }
   .mobile-nav { display: none; }
   .dashboard-grid { grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr); }
-  .requests-panel { grid-column: 1 / -1; grid-row: 1; }
-  .hero-card { grid-column: 1; grid-row: 2 / span 2; min-height: 310px; display: flex; flex-direction: column; }
-  .summary-card { grid-column: 2; grid-row: 2; }
+  .hero-card { grid-column: 1; grid-row: 1 / span 2; min-height: 310px; display: flex; flex-direction: column; }
+  .summary-card { grid-column: 2; grid-row: 1; }
   .primary-action { margin-top: auto; }
-  .schedule-card { grid-column: 2; grid-row: 3; }
+  .schedule-card { grid-column: 2; grid-row: 2; }
+  .requests-panel { grid-column: 1 / -1; grid-row: 3; }
 }
 
 @media (min-width: 1080px) {
@@ -457,9 +459,21 @@ a { color: inherit; }
   .team-access-row { grid-template-columns: auto 1fr auto; padding: 10px 0; }.team-access-row .role-chip { grid-column: 2; }.team-access-row .invite-state { grid-column: 2; }.team-access-row .icon-button { grid-column: 3; grid-row: 1; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }.kpi-card { display: grid; gap: 7px; }.reports-grid .full-span { grid-column: auto; }.barber-performance > div { grid-template-columns: auto 1fr auto; }.performance-track { display: none; }
   .notification-summary { order: -1; }.notification-summary > div { display: none; }
-  .notification-setup-card { grid-template-columns: auto 1fr; align-items: start; }
-  .notification-setup-actions { grid-column: 1 / -1; justify-content: flex-start; }
-  .notification-setup-actions .button { flex: 1; }
+  .notification-setup-card { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; margin-bottom: 16px; padding: 11px 12px; border-radius: 16px; }
+  .notification-setup-icon { width: 34px; height: 34px; border-radius: 11px; }
+  .notification-setup-card strong { font-size: .65rem; }
+  .notification-setup-card p { display: none; }
+  .notification-setup-actions { grid-column: auto; justify-content: flex-end; gap: 3px; }
+  .notification-setup-actions .button { min-height: 34px; padding: 0 9px; font-size: .59rem; white-space: nowrap; }
+  .notification-setup-actions .button svg { width: 14px; }
+  .notification-setup-actions .text-button { padding-inline: 4px; font-size: .56rem; }
+  .management-shortcuts-card { gap: 12px; margin-bottom: 18px; padding: 14px; border-radius: 18px; }
+  .management-shortcuts-card__heading > span { display: none; }
+  .management-shortcuts { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .management-shortcuts a { padding: 9px 8px; border-radius: 12px; }
+  .management-shortcuts__icon { width: 29px; height: 29px; border-radius: 9px; }
+  .management-shortcuts strong { font-size: .63rem; }
+  .management-shortcuts small { font-size: .54rem; }
   .service-picker__grid { grid-template-columns: 1fr; gap: 0; max-height: 270px; }
   .service-option { min-height: 50px; padding: 8px 10px; border-radius: 0; }
   .service-option strong { font-size: .72rem; }
@@ -975,8 +989,18 @@ a { color: inherit; }
 .photo-remove { min-height: 38px; padding-inline: 12px; }
 .drawer-whatsapp-box { display: grid; gap: 10px; margin: 2px 0 14px; padding: 13px; border: 1px solid #d5e8db; border-radius: 15px; background: #f3fbf5; }.drawer-whatsapp-heading { display: flex; align-items: center; gap: 9px; color: #23734b; }.drawer-whatsapp-heading > span { display: grid; gap: 2px; }.drawer-whatsapp-heading strong { font-size: .72rem; }.drawer-whatsapp-heading small { color: #5e7b68; font-size: .59rem; }.drawer-whatsapp-box .field { gap: 5px; }.drawer-whatsapp-box .field span { font-size: .59rem; }.drawer-whatsapp-box select { min-height: 38px; }.drawer-whatsapp { width: fit-content; margin: 0; color: #23734b; background: #e6f4ea; }
 .operating-card h2 { margin: 24px 0 18px; }
-.management-shortcuts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
-.management-shortcuts a { border: 1px solid var(--line); background: white; border-radius: 10px; padding: 12px 16px; text-decoration: none; font-weight: 600; font-size: .85rem; }
+.management-shortcuts-card { display: grid; gap: 16px; margin: 0 0 22px; padding: 18px; border: 1px solid #dfe7e1; border-radius: 22px; background: rgb(255 255 255 / .78); box-shadow: 0 9px 26px rgb(32 47 43 / .045); }
+.management-shortcuts-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.management-shortcuts-card__heading h2 { margin: 4px 0 0; color: var(--pine); font-size: 1rem; letter-spacing: -.025em; }
+.management-shortcuts-card__heading > span { color: var(--muted); font-size: .62rem; }
+.management-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0; }
+.management-shortcuts a { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; min-width: 0; padding: 11px 10px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: white; text-decoration: none; transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease; }
+.management-shortcuts a:hover { transform: translateY(-1px); border-color: #d6b9aa; box-shadow: 0 7px 16px rgb(32 47 43 / .07); }
+.management-shortcuts__icon { width: 32px; height: 32px; display: grid; place-items: center; flex: none; border-radius: 10px; color: var(--copper-dark); background: #faeee8; }
+.management-shortcuts a > span:nth-child(2) { display: grid; min-width: 0; gap: 3px; }
+.management-shortcuts strong { overflow: hidden; font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
+.management-shortcuts small { overflow: hidden; color: var(--muted); font-size: .57rem; text-overflow: ellipsis; white-space: nowrap; }
+.management-shortcuts a > svg { color: #a3aaa6; }
 .notification-setup-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 13px; margin: -8px 0 22px; padding: 14px 16px; border: 1px solid #ead6c9; border-radius: 18px; color: #633b2a; background: linear-gradient(135deg, #fff8f2, #fffdf9); box-shadow: 0 8px 24px rgb(32 47 43 / .04); }
 .notification-setup-icon { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 13px; color: var(--copper-dark); background: #f8e4d9; }
 .notification-setup-card strong { display: block; font-size: .75rem; }
@@ -1005,15 +1029,19 @@ a { color: inherit; }
 .requests-footer small { color: var(--muted); font-size: .62rem; }
 .mobile-nav.operation-nav { grid-template-columns: repeat(4,1fr); }
 .mobile-nav.operation-nav button { display: grid; place-items: center; gap: 4px; padding: 6px; color: #b4c2bd; background: none; border: 0; font-size: .65rem; }
-.mobile-menu nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.mobile-menu nav a { display: flex; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 10px; background: #f2f5f3; text-decoration: none; font-size: .85rem; }
+.mobile-menu nav { display: grid; gap: 18px; margin-bottom: 20px; }
+.mobile-menu__group { display: grid; gap: 6px; }
+.mobile-menu__group > p { margin: 0 4px 2px; color: var(--muted); font-size: .6rem; font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
+.mobile-menu__group a { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 10px 11px; border: 1px solid #e7ebe7; border-radius: 13px; background: #f7f9f7; text-decoration: none; font-size: .78rem; font-weight: 730; }
+.mobile-menu__group a svg { color: var(--copper-dark); }
+.mobile-menu__group a b { min-width: 20px; height: 20px; display: grid; place-items: center; margin-left: auto; border-radius: 999px; color: white; background: var(--copper); font-size: .58rem; }
 .date-switcher input { max-width: 155px; border: 0; min-height: 44px; padding: 5px; font: inherit; color: inherit; background: transparent; }
 .week-board { grid-template-columns: repeat(7,1fr); min-height: 200px; }
 .week-day { border: 0; cursor: pointer; font: inherit; color: inherit; }
 .rail-nav--full { overflow-y: auto; min-height: 0; }
 @media(max-width:759px) {
   .dashboard-grid { display: flex; flex-direction: column; }
-  .requests-panel { order: -1; }
+  .requests-panel { order: 3; }
   .operating-card { padding: 18px 14px; }
   .operating-day { grid-template-columns: 1fr; }
   .day-times label { flex: 1; }

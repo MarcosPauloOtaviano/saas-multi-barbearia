@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BellRing, CalendarDays, ChevronRight, CircleCheckBig, CircleDollarSign, Clock3, Sparkles, UserRound, Volume2 } from "lucide-react";
+import { BellRing, CalendarDays, ChevronRight, CircleCheckBig, CircleDollarSign, Clock3, Package, Scissors, Sparkles, UserRound, UserRoundCog, Volume2 } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { useAdminBase } from "@/lib/admin-route";
 import { formatCurrency } from "@/lib/format";
 
 const statusLabel = { pending: "Aguardando", confirmed: "Confirmado", in_progress: "Em atendimento", completed: "Concluído", cancelled: "Cancelado", no_show: "Faltou" };
+const managementLinks = [
+  { href: "/servicos", label: "Serviços", hint: "Catálogo e preços", icon: Scissors },
+  { href: "/produtos", label: "Produtos", hint: "Estoque e venda", icon: Package },
+  { href: "/equipe", label: "Equipe", hint: "Acessos e perfis", icon: UserRoundCog },
+  { href: "/horarios", label: "Funcionamento", hint: "Dias e pausas", icon: Clock3 },
+];
 
 export function DashboardHome() {
   const { appointments, clients, notifications, markNotificationRead, role, currentUserName, notificationPermission, requestNotificationPermission } = useAppData();
@@ -46,7 +52,7 @@ export function DashboardHome() {
     <>
       <div className="welcome-line"><div><p className="eyebrow">{role === "barber" ? "Minha rotina" : "Visão geral"}</p><h1>Olá, {currentUserName}.</h1></div><Link className="button primary small" href={`${base}/agenda?novo=1`}>+ Novo agendamento</Link></div>
       {canAskForNotifications && <section className="notification-setup-card" aria-live="polite"><span className="notification-setup-icon"><BellRing size={21} /></span><div><strong>Quer ouvir novos pedidos na hora?</strong><p>Ative o aviso deste aparelho para receber som e notificação quando um cliente solicitar horário.</p></div><div className="notification-setup-actions"><button className="button primary small" onClick={() => void requestNotificationPermission()}><Volume2 size={15} />Ativar avisos</button><button className="text-button" onClick={() => setNotificationPromptDismissed(true)}>Agora não</button></div></section>}
-      {(role==="owner"||role==="manager")&&<nav className="management-shortcuts" aria-label="Administração"><Link href={`${base}/servicos`}>Serviços</Link><Link href={`${base}/produtos`}>Produtos</Link><Link href={`${base}/equipe`}>Equipe</Link><Link href={`${base}/horarios`}>Dias e horários</Link></nav>}
+      {(role === "owner" || role === "manager") && <section className="management-shortcuts-card" aria-labelledby="atalhos-titulo"><div className="management-shortcuts-card__heading"><div><p className="eyebrow">Gestão rápida</p><h2 id="atalhos-titulo">Acesso direto</h2></div><span>Configure sem sair do painel</span></div><nav className="management-shortcuts" aria-label="Atalhos de gestão">{managementLinks.map(({ href, label, hint, icon: Icon }) => <Link href={`${base}${href}`} key={href}><span className="management-shortcuts__icon"><Icon size={17} /></span><span><strong>{label}</strong><small>{hint}</small></span><ChevronRight size={16} /></Link>)}</nav></section>}
       <div className="dashboard-grid">
         <section className="hero-card" aria-labelledby="proximo-cliente">
           <div className="hero-card__topline"><span><Sparkles size={15} /> Próximo cliente</span>{next&&<span className="status-pill">{statusLabel[next.status]}</span>}</div>

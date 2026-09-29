@@ -9,19 +9,34 @@ import { signOut } from "@/app/auth/actions";
 import type { MemberRole } from "@/lib/types";
 import { initials } from "@/lib/format";
 
-const navigation = [
-  { path: "", label: "Início", icon: House, roles: ["owner", "manager", "barber", "receptionist"] },
-  { path: "/agenda", label: "Agenda", icon: CalendarDays, roles: ["owner", "manager", "barber", "receptionist"] },
-  { path: "/clientes", label: "Clientes", icon: UsersRound, roles: ["owner", "manager", "receptionist"] },
-  { path: "/servicos", label: "Serviços", icon: Scissors, roles: ["owner", "manager"] },
-  { path: "/produtos", label: "Produtos", icon: Package, roles: ["owner", "manager"] },
-  { path: "/horarios", label: "Funcionamento", icon: Clock, roles: ["owner", "manager"] },
-  { path: "/perfil", label: "Meu perfil", icon: UserRound, roles: ["owner", "manager", "barber", "receptionist"] },
-  { path: "/minha-producao", label: "Minha produção", icon: CircleDollarSign, roles: ["barber"] },
-  { path: "/equipe", label: "Equipe", icon: UserRoundCog, roles: ["owner", "manager"] },
-  { path: "/relatorios", label: "Relatórios", icon: BarChart3, roles: ["owner", "manager"] },
-  { path: "/notificacoes", label: "Avisos", icon: Bell, roles: ["owner", "manager", "barber", "receptionist"] },
-  { path: "/configuracoes", label: "Ajustes", icon: Settings, roles: ["owner", "manager"] },
+const navigationGroups = [
+  {
+    label: "Operação",
+    items: [
+      { path: "", label: "Início", icon: House, roles: ["owner", "manager", "barber", "receptionist"] },
+      { path: "/agenda", label: "Agenda", icon: CalendarDays, roles: ["owner", "manager", "barber", "receptionist"] },
+      { path: "/notificacoes", label: "Avisos", icon: Bell, roles: ["owner", "manager", "barber", "receptionist"] },
+    ],
+  },
+  {
+    label: "Gestão",
+    items: [
+      { path: "/clientes", label: "Clientes", icon: UsersRound, roles: ["owner", "manager", "receptionist"] },
+      { path: "/servicos", label: "Serviços", icon: Scissors, roles: ["owner", "manager"] },
+      { path: "/produtos", label: "Produtos", icon: Package, roles: ["owner", "manager"] },
+      { path: "/horarios", label: "Funcionamento", icon: Clock, roles: ["owner", "manager"] },
+      { path: "/equipe", label: "Equipe", icon: UserRoundCog, roles: ["owner", "manager"] },
+      { path: "/relatorios", label: "Relatórios", icon: BarChart3, roles: ["owner", "manager"] },
+    ],
+  },
+  {
+    label: "Conta",
+    items: [
+      { path: "/perfil", label: "Meu perfil", icon: UserRound, roles: ["owner", "manager", "barber", "receptionist"] },
+      { path: "/minha-producao", label: "Minha produção", icon: CircleDollarSign, roles: ["barber"] },
+      { path: "/configuracoes", label: "Ajustes", icon: Settings, roles: ["owner", "manager"] },
+    ],
+  },
 ];
 
 const roleLabels: Record<MemberRole, string> = { owner: "Proprietário", manager: "Gerente", barber: "Barbeiro", receptionist: "Recepcionista" };
@@ -32,7 +47,7 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
   const base = `/admin/${slug}`;
   const { notifications, role, currentUserName, shopName, loading, loadError } = useAppData();
   const unread = notifications.filter((note) => !note.read).length;
-  const allowedNavigation = navigation.filter((item) => item.roles.includes(role));
+  const allowedNavigation = navigationGroups.flatMap((group) => group.items).filter((item) => item.roles.includes(role));
   const isCurrent = (path: string) => path === "" ? pathname === base : pathname.startsWith(`${base}${path}`);
   const routeAllowed = allowedNavigation.some((item) => isCurrent(item.path));
   const userInitials = initials(currentUserName);
@@ -44,7 +59,7 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
   return <main className="app-frame">
     <aside className="desktop-rail desktop-rail--full" aria-label="Navegação principal">
       <div className="rail-brand"><Link className="brand-mark" href={base} aria-label={`${shopName} — painel da equipe`}><Scissors size={23} strokeWidth={2.2} /></Link><div><strong>{shopName}</strong><small>Painel da equipe</small></div></div>
-      <nav className="rail-nav rail-nav--full">{allowedNavigation.map(({ path, label, icon: Icon }) => <Link className={`rail-link ${isCurrent(path) ? "is-active" : ""}`} href={`${base}${path}`} aria-label={label} title={label} key={path}><Icon /><span>{label}</span>{label === "Avisos" && unread > 0 && <b className="rail-badge">{unread}</b>}</Link>)}</nav>
+      <nav className="rail-nav rail-nav--full">{navigationGroups.map((group) => { const items = group.items.filter((item) => item.roles.includes(role)); if (!items.length) return null; return <div className="rail-nav-group" key={group.label}><p>{group.label}</p>{items.map(({ path, label, icon: Icon }) => <Link className={`rail-link ${isCurrent(path) ? "is-active" : ""}`} href={`${base}${path}`} aria-label={label} title={label} key={path}><Icon /><span>{label}</span>{label === "Avisos" && unread > 0 && <b className="rail-badge">{unread}</b>}</Link>)}</div>; })}</nav>
       <details className="profile-menu rail-profile"><summary className="avatar-button">{userInitials}</summary><div className="profile-popover"><strong>{currentUserName}</strong><span>{roleLabels[role]}</span>{(role === "owner" || role === "manager") && <Link href={`${base}/configuracoes`}><Settings size={16} /> Configurações</Link>}<form action={logoutAction}><button type="submit"><LogOut size={16} /> Sair</button></form></div></details>
     </aside>
 
@@ -55,7 +70,7 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
     </section>
 
     <nav className="mobile-nav operation-nav" aria-label="Navegação principal"><Link href={base} className={isCurrent("") ? "is-active" : ""}><House /><span>Início</span></Link><Link href={`${base}/agenda`} className={isCurrent("/agenda") ? "is-active" : ""}><CalendarDays /><span>Agenda</span></Link><Link href={`${base}/perfil`} className={isCurrent("/perfil") ? "is-active" : ""}><UserRound /><span>Meu perfil</span></Link><button onClick={() => setMenuOpen(true)} aria-expanded={menuOpen} aria-controls="mobile-menu"><Menu /><span>Mais</span></button></nav>
-    {menuOpen && <div className="modal-backdrop"><section className="modal-card mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title"><div className="modal-header"><h2 id="mobile-menu-title">{shopName}</h2><button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X /></button></div><nav>{allowedNavigation.map(({path,label,icon:Icon}) => <Link key={path} href={`${base}${path}`} onClick={() => setMenuOpen(false)}><Icon size={20}/>{label}</Link>)}</nav><form action={logoutAction}><button className="button ghost"><LogOut size={18}/>Sair da conta</button></form></section></div>}
+    {menuOpen && <div className="modal-backdrop"><section className="modal-card mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title"><div className="modal-header"><div><p className="eyebrow">Navegação</p><h2 id="mobile-menu-title">{shopName}</h2></div><button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X /></button></div><nav>{navigationGroups.map((group) => { const items = group.items.filter((item) => item.roles.includes(role)); if (!items.length) return null; return <div className="mobile-menu__group" key={group.label}><p>{group.label}</p>{items.map(({path,label,icon:Icon}) => <Link key={path} href={`${base}${path}`} onClick={() => setMenuOpen(false)}><Icon size={20}/><span>{label}</span>{label === "Avisos" && unread > 0 && <b>{unread}</b>}</Link>)}</div>; })}</nav><form action={logoutAction}><button className="button ghost"><LogOut size={18}/>Sair da conta</button></form></section></div>}
   </main>;
 }
 
