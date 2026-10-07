@@ -319,6 +319,14 @@ a { color: inherit; }
 .recurrence-days label:has(input:checked) { border-color: var(--copper); color: var(--copper-dark); background: #fff1ea; }
 .recurrence-days input { width: 15px; height: 15px; accent-color: var(--copper); }
 .recurrence-hint { margin: -3px 0 0; color: var(--muted); font-size: .6rem; line-height: 1.4; }
+.recurrence-conflict { display: grid; gap: 13px; padding: 14px; border: 1px solid #e8c6a7; border-radius: 16px; color: #744321; background: linear-gradient(135deg, #fff6e9, #fffaf5); }
+.recurrence-conflict__copy { display: flex; align-items: flex-start; gap: 10px; }
+.recurrence-conflict__copy > span { width: 32px; height: 32px; display: grid; place-items: center; flex: none; border-radius: 10px; color: #a45d0e; background: #ffe8c8; }
+.recurrence-conflict__copy div { display: grid; gap: 4px; }
+.recurrence-conflict__copy strong { font-size: .75rem; }
+.recurrence-conflict__copy p { margin: 0; color: #89654b; font-size: .64rem; line-height: 1.45; }
+.recurrence-conflict__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.recurrence-conflict__actions .button { min-height: 38px; font-size: .64rem; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 7px; }
 .form-feedback { display: flex; align-items: center; gap: 7px; margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
 .form-feedback.success { color: #216a48; background: #e5f4eb; }.form-feedback.error { color: #963f35; background: #fdecea; }
@@ -479,6 +487,8 @@ a { color: inherit; }
   .service-option strong { font-size: .72rem; }
   .service-picker__summary { min-height: 54px; }
   .service-picker__toggle { min-height: 32px; padding-inline: 10px; }
+  .recurrence-conflict__actions { display: grid; grid-template-columns: 1fr; }
+  .recurrence-conflict__actions .button { width: 100%; }
   .connection-banner { align-items: flex-start; font-size: .64rem; }
   .production-card { padding: 17px; border-radius: 17px; }
   .production-card__metrics { gap: 7px; }

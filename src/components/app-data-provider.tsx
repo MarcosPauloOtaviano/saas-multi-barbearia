@@ -16,6 +16,7 @@ type EditableService = Omit<Service, "active">;
 type NewBarber = Pick<Barber, "name" | "color">;
 type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string; barberId?: string; initialPassword: string };
 type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active" | "breakStart" | "breakEnd">;
+type RecurringAppointmentResult = { ok: boolean; message: string; createdCount?: number; requiresConfirmation?: boolean; conflictKind?: "lunch" | "schedule" | "appointment" };
 
 function barberMediaPath(publicUrl?: string) {
   if (!publicUrl) return null;
@@ -49,7 +50,7 @@ type AppDataContextValue = {
   shopName: string;
   canManage: boolean;
   addAppointment: (appointment: NewAppointment) => Promise<{ ok: boolean; message: string }>;
-  addRecurringAppointments: (input: RecurringAppointmentInput) => Promise<{ ok: boolean; message: string; createdCount?: number }>;
+  addRecurringAppointments: (input: RecurringAppointmentInput) => Promise<RecurringAppointmentResult>;
   updateAppointmentStatus: (id: string, status: Appointment["status"]) => Promise<{ ok: boolean; message: string }>;
   rescheduleAppointment: (id: string, date: string, time: string) => Promise<{ ok: boolean; message: string }>;
   addClient: (client: NewClient) => Promise<ClientMutationResult>;
@@ -437,7 +438,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (hasSchedulingConflict(appointments, input)) return { ok: false, message: "Esse intervalo já está ocupado para o barbeiro ou para o cliente." };
       const serviceIds = input.serviceIds?.length ? input.serviceIds : [input.serviceId];
       const { data, error } = await createClient().rpc("create_internal_appointment", { target_barbershop_id: remoteTenantId.current, selected_service_ids: serviceIds, selected_barber_id: input.barberId, selected_client_id: input.clientId, local_starts_at: `${input.date}T${input.time}:00`, appointment_notes: null });
-      if (error) return { ok: false, message: error.code === "23P01" ? "Esse barbeiro já possui um atendimento nesse intervalo." : "Não foi possível criar o agendamento." };
+      if (error) {
+        const rawMessage = `${error.message ?? ""} ${error.details ?? ""}`;
+        if (rawMessage.includes("lunch_conflict")) return { ok: false, message: "Esse horário cruza a pausa para almoço do barbeiro. Escolha outro período." };
+        if (rawMessage.includes("outside operating hours") || rawMessage.includes("schedule_conflict") || error.code === "23514") return { ok: false, message: "Esse horário fica fora do funcionamento ou cruza uma pausa do barbeiro." };
+        return { ok: false, message: error.code === "23P01" ? "Esse barbeiro já possui um atendimento nesse intervalo." : "Não foi possível criar o agendamento." };
+      }
       setAppointments((current) => [...current, { ...input, id: String(data), status: "pending", source: "internal" }]);
       return { ok: true, message: "Agendamento criado e lembretes programados." };
     },
@@ -457,10 +463,19 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         duration_months: input.durationMonths,
         selected_weekdays: input.weekdays,
         appointment_notes: null,
+        allow_schedule_conflict: Boolean(input.allowScheduleConflict),
       });
       if (error) {
-        if (error.code === "23P01" || error.message?.includes("recurrence_conflict")) {
-          return { ok: false, message: error.message?.replace(/^.*recurrence_conflict:\s*/, "Conflito encontrado em ") || "Existe um horário ocupado dentro do período escolhido." };
+        const rawMessage = `${error.message ?? ""} ${error.details ?? ""}`;
+        if (rawMessage.includes("lunch_conflict")) {
+          const conflictDate = rawMessage.split("lunch_conflict:")[1]?.trim();
+          return { ok: false, message: `Esse horário cruza a pausa para almoço do barbeiro${conflictDate ? ` (${conflictDate})` : ""}.`, requiresConfirmation: true, conflictKind: "lunch" };
+        }
+        if (rawMessage.includes("recurrence_conflict")) {
+          return { ok: false, message: rawMessage.replace(/^.*recurrence_conflict:\s*/, "Conflito encontrado em ") || "Existe um horário ocupado dentro do período escolhido.", conflictKind: "appointment" };
+        }
+        if (rawMessage.includes("schedule_conflict") || error.code === "23514") {
+          return { ok: false, message: "Esse horário fica fora do funcionamento do barbeiro. Confira a data, o horário e a pausa para almoço.", conflictKind: "schedule" };
         }
         return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente." };
       }

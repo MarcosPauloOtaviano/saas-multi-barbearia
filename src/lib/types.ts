@@ -36,6 +36,8 @@ export type RecurringAppointmentInput = {
   intervalDays: number;
   durationMonths: 3 | 12 | 24;
   weekdays: number[];
+  /** Admin explicitly confirmed that lunch-break conflicts may be overridden. */
+  allowScheduleConflict?: boolean;
 };
 
 export type Client = {

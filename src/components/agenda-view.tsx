@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleX, Clock3, Filter, MessageCircle, Plus, Repeat2, Scissors, UserRound, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, CircleAlert, CircleX, Clock3, Filter, MessageCircle, Plus, Repeat2, Scissors, UserRound, X } from "lucide-react";
 import { PageTitle } from "@/components/app-shell";
 import { useAppData } from "@/components/app-data-provider";
 import { formatCurrency } from "@/lib/format";
@@ -36,6 +36,8 @@ export function AgendaView() {
   const [servicesOpen, setServicesOpen] = useState(false);
   const [recurrenceInterval, setRecurrenceInterval] = useState("7");
   const [recurrenceDuration, setRecurrenceDuration] = useState("3");
+  const [recurringConflict, setRecurringConflict] = useState<string | null>(null);
+  const [allowRecurringScheduleConflict, setAllowRecurringScheduleConflict] = useState(false);
   const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>(() => {
     const day = new Date(`${todayIso}T12:00:00Z`).getUTCDay();
     return [day];
@@ -88,6 +90,8 @@ export function AgendaView() {
     setModalOpen(false);
     setServicesOpen(false);
     setFeedback(null);
+    setRecurringConflict(null);
+    setAllowRecurringScheduleConflict(false);
   }
 
   function whatsappMessage() {
@@ -153,7 +157,7 @@ export function AgendaView() {
     }
     if (!client) return;
     const result = recurring
-      ? await addRecurringAppointments({ clientId: client.id, barberId: barber.id, serviceIds: selectedServices.map((service) => service.id), firstDate: String(data.get("date")), time: String(data.get("time")), intervalDays, durationMonths, weekdays })
+      ? await addRecurringAppointments({ clientId: client.id, barberId: barber.id, serviceIds: selectedServices.map((service) => service.id), firstDate: String(data.get("date")), time: String(data.get("time")), intervalDays, durationMonths, weekdays, allowScheduleConflict: allowRecurringScheduleConflict })
       : await addAppointment({
         clientId: client.id, clientName: client.name,
         barberId: barber.id, barberName: barber.name,
@@ -161,6 +165,11 @@ export function AgendaView() {
         date: String(data.get("date")), time: String(data.get("time")),
         durationMinutes: totalDuration, priceCents: totalPrice,
       });
+    if (recurring && !result.ok && "requiresConfirmation" in result && result.requiresConfirmation && "conflictKind" in result && result.conflictKind === "lunch") {
+      setRecurringConflict(result.message);
+      setFeedback(null);
+      return;
+    }
     setFeedback(result);
     if (result.ok) {
       setSuccessNotice(result.message);
@@ -169,6 +178,8 @@ export function AgendaView() {
       setSelectedServiceIds([]);
       setServicesOpen(false);
       setRecurringEnabled(false);
+      setRecurringConflict(null);
+      setAllowRecurringScheduleConflict(false);
       setRecurrenceWeekdays([]);
       setRecurrenceInterval("7");
       setRecurrenceDuration("3");
@@ -253,13 +264,13 @@ export function AgendaView() {
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAppointmentModal(); }}>
           <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="novo-agendamento-titulo">
             <div className="modal-header"><div><p className="eyebrow">Agenda</p><h2 id="novo-agendamento-titulo">Novo agendamento</h2></div><button className="icon-button" onClick={closeAppointmentModal} aria-label="Fechar"><X /></button></div>
-            <form className="form-grid" onSubmit={submitAppointment}>
+            <form id="novo-agendamento-form" className="form-grid" onSubmit={submitAppointment}>
               <div className="field full client-field"><div className="field-heading"><span>Cliente</span>{clients.length > 0 && <button type="button" className="text-button" onClick={() => setNewClientMode((current) => !current)}>{showNewClientForm ? "Escolher cliente cadastrado" : "Cadastrar novo cliente"}</button>}</div>{showNewClientForm ? <><div className="new-client-fields"><input name="newClientName" placeholder="Nome completo" minLength={2} required autoFocus /><input name="newClientPhone" type="tel" placeholder="WhatsApp" required /><input name="newClientEmail" type="email" placeholder="E-mail (opcional)" /></div><small className="field-help">O cliente será cadastrado automaticamente junto com este agendamento.</small></> : <select name="client" required defaultValue={searchParams.get("cliente") ?? ""}><option value="" disabled>Selecione o cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select>}</div>
               <fieldset className="field full service-picker"><legend>Serviços</legend><div className="service-picker__summary"><div><strong>{selectedServicePreview.length ? `${selectedServicePreview.length} ${selectedServicePreview.length === 1 ? "serviço escolhido" : "serviços escolhidos"}` : "Nenhum serviço escolhido"}</strong><small>{selectedServicePreview.length ? `${previewDuration} min · ${formatCurrency(previewPrice)}` : "Toque para escolher o que será feito"}</small></div><button type="button" className="service-picker__toggle" onClick={() => setServicesOpen((current) => !current)}>{servicesOpen ? "Fechar" : selectedServicePreview.length ? "Editar" : "Escolher"}</button></div>{!servicesOpen && selectedServiceIds.map((id) => <input key={id} type="hidden" name="serviceIds" value={id} />)}{servicesOpen && <div className="service-picker__grid">{services.filter((service) => service.active).map((service) => <label className={`service-option ${selectedServiceIds.includes(service.id) ? "is-selected" : ""}`} key={service.id}><input name="serviceIds" type="checkbox" value={service.id} checked={selectedServiceIds.includes(service.id)} onChange={(event) => setSelectedServiceIds((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><span><strong>{service.name}</strong><small>{service.durationMinutes} min</small></span><b>{formatCurrency(service.priceCents)}</b></label>)}</div>}</fieldset>
               <label className="field full"><span>Barbeiro</span><select name="barber" required defaultValue={currentBarberId ?? ""}><option value="" disabled>Selecione o barbeiro</option>{barbers.filter((barber) => barber.active && (role !== "barber" || barber.id === currentBarberId)).map((barber) => <option value={barber.id} key={barber.id}>{barber.name}</option>)}</select></label>
               <label className="field"><span>Data</span><input name="date" type="date" defaultValue={selectedDate} min={todayIso} required /></label>
               <label className="field"><span>Horário</span><input name="time" type="time" required /></label>
-              <label className="recurrence-toggle full"><input type="checkbox" checked={recurringEnabled} onChange={(event) => setRecurringEnabled(event.target.checked)} /><span><strong><Repeat2 size={16} /> Criar agendamento recorrente</strong><small>Reserve esse mesmo horário para o cliente por vários meses.</small></span></label>
+              <label className="recurrence-toggle full"><input type="checkbox" checked={recurringEnabled} onChange={(event) => { setRecurringEnabled(event.target.checked); setRecurringConflict(null); setAllowRecurringScheduleConflict(false); }} /><span><strong><Repeat2 size={16} /> Criar agendamento recorrente</strong><small>Reserve esse mesmo horário para o cliente por vários meses.</small></span></label>
               {recurringEnabled && <div className="recurrence-panel full">
                 <div className="recurrence-panel__heading"><div><strong>Agenda fixa</strong><small>Você pode revisar e cancelar cada horário depois, na agenda.</small></div><span>{recurrenceDuration} meses</span></div>
                 <div className="form-grid">
@@ -270,8 +281,9 @@ export function AgendaView() {
                 <fieldset className="recurrence-days"><legend>Dias da semana <small>(opcional)</small></legend><div>{[[0,"Dom"],[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"]].map(([value,label]) => <label key={String(value)}><input name="weekdays" type="checkbox" value={String(value)} checked={recurrenceWeekdays.includes(Number(value))} onChange={(event) => setRecurrenceWeekdays((current) => event.target.checked ? [...new Set([...current, Number(value)])] : current.filter((day) => day !== Number(value)))} /><span>{label}</span></label>)}</div></fieldset>
                 <p className="recurrence-hint">{recurrenceWeekdays.length ? "Os dias marcados serão repetidos na cadência escolhida." : "Sem dias marcados, o sistema repete exatamente a cada intervalo escolhido."}</p>
               </div>}
+              {recurringConflict && <div className="recurrence-conflict full" role="alert"><div className="recurrence-conflict__copy"><span><CircleAlert size={19} /></span><div><strong>Há um conflito com a pausa para almoço</strong><p>{recurringConflict} O sistema não vai criar nada sem sua confirmação.</p></div></div><div className="recurrence-conflict__actions"><button type="button" className="button ghost" onClick={() => { setRecurringConflict(null); setAllowRecurringScheduleConflict(false); }}>Escolher outro horário</button><button type="button" className="button primary" onClick={() => { setAllowRecurringScheduleConflict(true); setRecurringConflict(null); window.setTimeout(() => (document.getElementById("novo-agendamento-form") as HTMLFormElement | null)?.requestSubmit(), 0); }}>Criar mesmo assim</button></div></div>}
               {feedback && <p className={`form-feedback full ${feedback.ok ? "success" : "error"}`}>{feedback.ok ? <Check size={17} /> : <CircleX size={17} />}{feedback.message}</p>}
-              <div className="modal-actions full"><button type="button" className="button ghost" onClick={closeAppointmentModal}>Cancelar</button><button className="button primary" type="submit" disabled={busy}>{busy?"Salvando…":"Criar agendamento"}</button></div>
+              <div className="modal-actions full"><button type="button" className="button ghost" onClick={closeAppointmentModal}>Cancelar</button><button id="novo-agendamento-submit" className="button primary" type="submit" disabled={busy}>{busy?"Salvando…":"Criar agendamento"}</button></div>
             </form>
           </section>
         </div>
