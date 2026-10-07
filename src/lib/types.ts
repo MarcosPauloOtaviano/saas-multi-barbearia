@@ -36,6 +36,8 @@ export type RecurringAppointmentInput = {
   intervalDays: number;
   durationMonths: 3 | 12 | 24;
   weekdays: number[];
+  /** Also create the appointment on the date chosen in the form. */
+  includeFirstDate?: boolean;
   /** Admin explicitly confirmed that lunch-break conflicts may be overridden. */
   allowScheduleConflict?: boolean;
 };

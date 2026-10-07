@@ -39,9 +39,10 @@ function recurringScheduleConflict(input: RecurringAppointmentInput, catalog: Se
   for (const cursor = new Date(firstDate); cursor < endDate; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
     const daysFromFirst = Math.round((cursor.getTime() - firstDate.getTime()) / 86_400_000);
     const weekIndex = Math.floor((cursor.getTime() - firstWeekStart.getTime()) / (7 * 86_400_000));
-    const shouldCreate = input.weekdays.length
+    const isFirstDate = cursor.getTime() === firstDate.getTime();
+    const shouldCreate = (input.includeFirstDate && isFirstDate) || (input.weekdays.length
       ? input.weekdays.includes(cursor.getUTCDay()) && weekIndex % intervalWeeks === 0
-      : daysFromFirst % input.intervalDays === 0;
+      : daysFromFirst % input.intervalDays === 0);
     if (!shouldCreate) continue;
     const schedule = schedules.find((item) => item.barberId === input.barberId && item.weekday === cursor.getUTCDay() && item.active);
     if (!schedule) continue;
@@ -519,12 +520,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         selected_weekdays: input.weekdays,
         appointment_notes: null,
         allow_schedule_conflict: Boolean(input.allowScheduleConflict),
+        include_first_date: Boolean(input.includeFirstDate),
       };
       let { data, error } = await db.rpc("create_recurring_internal_appointments", recurringArgs);
       // Keep recurring bookings working while a deployment has the new SQL
       // migration waiting to be applied. Once the new overload exists, this
       // branch is never reached and the explicit lunch confirmation is used.
-      if (error && (error.code === "PGRST202" || error.code === "42883")) {
+      if (error && (error.code === "PGRST202" || error.code === "42883") && !input.includeFirstDate) {
         const legacyResult = await db.rpc("create_recurring_internal_appointments", {
           target_barbershop_id: remoteTenantId.current,
           selected_service_ids: serviceIds,

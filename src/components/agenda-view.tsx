@@ -125,6 +125,7 @@ export function AgendaView() {
     const intervalDays = intervalPreset === "custom" ? Number(data.get("intervalDays")) : Number(intervalPreset);
     const durationMonths = Number(data.get("durationMonths") ?? recurrenceDuration) as 3 | 12 | 24;
     const weekdays = data.getAll("weekdays").map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);
+    const includeFirstDate = data.get("includeFirstDate") === "on";
     if (recurring && (!Number.isInteger(intervalDays) || intervalDays < 1 || intervalDays > 365)) {
       setFeedback({ ok: false, message: "Escolha um intervalo entre 1 e 365 dias." });
       return;
@@ -157,7 +158,7 @@ export function AgendaView() {
     }
     if (!client) return;
     const result = recurring
-      ? await addRecurringAppointments({ clientId: client.id, barberId: barber.id, serviceIds: selectedServices.map((service) => service.id), firstDate: String(data.get("date")), time: String(data.get("time")), intervalDays, durationMonths, weekdays, allowScheduleConflict: allowRecurringScheduleConflict })
+      ? await addRecurringAppointments({ clientId: client.id, barberId: barber.id, serviceIds: selectedServices.map((service) => service.id), firstDate: String(data.get("date")), time: String(data.get("time")), intervalDays, durationMonths, weekdays, includeFirstDate, allowScheduleConflict: allowRecurringScheduleConflict })
       : await addAppointment({
         clientId: client.id, clientName: client.name,
         barberId: barber.id, barberName: barber.name,
@@ -279,6 +280,7 @@ export function AgendaView() {
                   <label className="field"><span>Por quanto tempo</span><select name="durationMonths" value={recurrenceDuration} onChange={(event) => setRecurrenceDuration(event.target.value)}><option value="3">3 meses</option><option value="12">12 meses</option><option value="24">24 meses</option></select></label>
                 </div>
                 <fieldset className="recurrence-days"><legend>Dias da semana <small>(opcional)</small></legend><div>{[[0,"Dom"],[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"]].map(([value,label]) => <label key={String(value)}><input name="weekdays" type="checkbox" value={String(value)} checked={recurrenceWeekdays.includes(Number(value))} onChange={(event) => setRecurrenceWeekdays((current) => event.target.checked ? [...new Set([...current, Number(value)])] : current.filter((day) => day !== Number(value)))} /><span>{label}</span></label>)}</div></fieldset>
+                <label className="recurrence-first-date"><input name="includeFirstDate" type="checkbox" defaultChecked /><span><strong>Criar também na data escolhida</strong><small>Use quando o cliente vai cortar hoje e depois quer repetir nos dias marcados.</small></span></label>
                 <p className="recurrence-hint">{recurrenceWeekdays.length ? "Os dias marcados serão repetidos na cadência escolhida." : "Sem dias marcados, o sistema repete exatamente a cada intervalo escolhido."}</p>
               </div>}
               {recurringConflict && <div className="recurrence-conflict full" role="alert"><div className="recurrence-conflict__copy"><span><CircleAlert size={19} /></span><div><strong>Há um conflito com a pausa para almoço</strong><p>{recurringConflict} O sistema não vai criar nada sem sua confirmação.</p></div></div><div className="recurrence-conflict__actions"><button type="button" className="button ghost" onClick={() => { setRecurringConflict(null); setAllowRecurringScheduleConflict(false); }}>Escolher outro horário</button><button type="button" className="button primary" onClick={() => { setAllowRecurringScheduleConflict(true); setRecurringConflict(null); window.setTimeout(() => (document.getElementById("novo-agendamento-form") as HTMLFormElement | null)?.requestSubmit(), 0); }}>Criar mesmo assim</button></div></div>}

@@ -318,6 +318,11 @@ a { color: inherit; }
 .recurrence-days label { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: white; font-size: .62rem; font-weight: 750; cursor: pointer; }
 .recurrence-days label:has(input:checked) { border-color: var(--copper); color: var(--copper-dark); background: #fff1ea; }
 .recurrence-days input { width: 15px; height: 15px; accent-color: var(--copper); }
+.recurrence-first-date { display: flex; align-items: flex-start; gap: 9px; padding: 10px 11px; border: 1px solid #e6ddd6; border-radius: 12px; background: #fff; cursor: pointer; }
+.recurrence-first-date input { width: 17px; height: 17px; margin-top: 1px; flex: none; accent-color: var(--copper); }
+.recurrence-first-date span { display: grid; gap: 3px; }
+.recurrence-first-date strong { color: var(--pine); font-size: .66rem; }
+.recurrence-first-date small { color: var(--muted); font-size: .59rem; line-height: 1.4; }
 .recurrence-hint { margin: -3px 0 0; color: var(--muted); font-size: .6rem; line-height: 1.4; }
 .recurrence-conflict { display: grid; gap: 13px; padding: 14px; border: 1px solid #e8c6a7; border-radius: 16px; color: #744321; background: linear-gradient(135deg, #fff6e9, #fffaf5); }
 .recurrence-conflict__copy { display: flex; align-items: flex-start; gap: 10px; }
