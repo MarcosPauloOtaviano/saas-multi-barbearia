@@ -173,7 +173,10 @@ declare
   weekday_count integer := coalesce(array_length(selected_weekdays, 1), 0);
   should_create boolean;
 begin
-  if not (select private.is_barbershop_member(target_barbershop_id)) then
+  if not (select private.has_barbershop_role(
+    target_barbershop_id,
+    array['owner', 'manager', 'barber', 'receptionist']::public.member_role[]
+  )) then
     raise exception 'not authorized';
   end if;
 
