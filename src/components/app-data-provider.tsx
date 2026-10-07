@@ -17,6 +17,45 @@ type NewBarber = Pick<Barber, "name" | "color">;
 type TeamInvite = Pick<TeamMember, "name" | "email" | "role"> & { color: string; barberId?: string; initialPassword: string };
 type ScheduleEntry = Pick<WorkingHour, "weekday" | "startsAt" | "endsAt" | "active" | "breakStart" | "breakEnd">;
 type RecurringAppointmentResult = { ok: boolean; message: string; createdCount?: number; requiresConfirmation?: boolean; conflictKind?: "lunch" | "schedule" | "appointment" };
+type RecurringScheduleConflict = { kind: "lunch" | "schedule"; dateLabel: string; time: string };
+
+function clockMinutes(value?: string | null) {
+  if (!value) return null;
+  const [hours, minutes] = value.slice(0, 5).split(":").map(Number);
+  return Number.isFinite(hours) && Number.isFinite(minutes) ? hours * 60 + minutes : null;
+}
+
+function recurringScheduleConflict(input: RecurringAppointmentInput, catalog: Service[], schedules: WorkingHour[]): RecurringScheduleConflict | null {
+  if (!schedules.length) return null;
+  const duration = catalog.filter((service) => input.serviceIds.includes(service.id) && service.active).reduce((total, service) => total + service.durationMinutes, 0);
+  const startMinutes = clockMinutes(input.time);
+  if (!duration || startMinutes === null) return null;
+  const firstDate = new Date(`${input.firstDate}T12:00:00Z`);
+  const endDate = new Date(firstDate);
+  endDate.setUTCMonth(endDate.getUTCMonth() + input.durationMonths);
+  const firstWeekStart = new Date(firstDate);
+  firstWeekStart.setUTCDate(firstWeekStart.getUTCDate() - ((firstWeekStart.getUTCDay() + 6) % 7));
+  const intervalWeeks = Math.max(1, Math.floor(input.intervalDays / 7));
+  for (const cursor = new Date(firstDate); cursor < endDate; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    const daysFromFirst = Math.round((cursor.getTime() - firstDate.getTime()) / 86_400_000);
+    const weekIndex = Math.floor((cursor.getTime() - firstWeekStart.getTime()) / (7 * 86_400_000));
+    const shouldCreate = input.weekdays.length
+      ? input.weekdays.includes(cursor.getUTCDay()) && weekIndex % intervalWeeks === 0
+      : daysFromFirst % input.intervalDays === 0;
+    if (!shouldCreate) continue;
+    const schedule = schedules.find((item) => item.barberId === input.barberId && item.weekday === cursor.getUTCDay() && item.active);
+    if (!schedule) continue;
+    const endMinutes = startMinutes + duration;
+    const breakStart = clockMinutes(schedule.breakStart);
+    const breakEnd = clockMinutes(schedule.breakEnd);
+    const dateLabel = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(cursor);
+    if (breakStart !== null && breakEnd !== null && startMinutes < breakEnd && endMinutes > breakStart) return { kind: "lunch", dateLabel, time: input.time };
+    const opening = clockMinutes(schedule.startsAt);
+    const closing = clockMinutes(schedule.endsAt);
+    if (opening !== null && closing !== null && (startMinutes < opening || endMinutes > closing)) return { kind: "schedule", dateLabel, time: input.time };
+  }
+  return null;
+}
 
 function barberMediaPath(publicUrl?: string) {
   if (!publicUrl) return null;
@@ -439,7 +478,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const serviceIds = input.serviceIds?.length ? input.serviceIds : [input.serviceId];
       const { data, error } = await createClient().rpc("create_internal_appointment", { target_barbershop_id: remoteTenantId.current, selected_service_ids: serviceIds, selected_barber_id: input.barberId, selected_client_id: input.clientId, local_starts_at: `${input.date}T${input.time}:00`, appointment_notes: null });
       if (error) {
-        const rawMessage = `${error.message ?? ""} ${error.details ?? ""}`;
+        const rawMessage = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`;
         if (rawMessage.includes("lunch_conflict")) return { ok: false, message: "Esse horário cruza a pausa para almoço do barbeiro. Escolha outro período." };
         if (rawMessage.includes("outside operating hours") || rawMessage.includes("schedule_conflict") || error.code === "23514") return { ok: false, message: "Esse horário fica fora do funcionamento ou cruza uma pausa do barbeiro." };
         return { ok: false, message: error.code === "23P01" ? "Esse barbeiro já possui um atendimento nesse intervalo." : "Não foi possível criar o agendamento." };
@@ -451,6 +490,22 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (!hasSupabaseEnv || !remoteTenantId.current) return unavailable;
       const serviceIds = input.serviceIds.filter(Boolean);
       if (!serviceIds.length) return { ok: false, message: "Selecione pelo menos um serviço." };
+      const localScheduleConflict = recurringScheduleConflict(input, services, workingHours);
+      if (localScheduleConflict && !input.allowScheduleConflict && localScheduleConflict.kind === "lunch") {
+        return {
+          ok: false,
+          message: `Esse horário cruza a pausa para almoço do barbeiro (${localScheduleConflict.dateLabel} às ${localScheduleConflict.time}).`,
+          requiresConfirmation: true,
+          conflictKind: "lunch",
+        };
+      }
+      if (localScheduleConflict && !input.allowScheduleConflict && localScheduleConflict.kind === "schedule") {
+        return {
+          ok: false,
+          message: `O serviço termina fora do horário de trabalho do barbeiro (${localScheduleConflict.dateLabel} às ${localScheduleConflict.time}). Escolha outro horário ou outro dia.`,
+          conflictKind: "schedule",
+        };
+      }
       const db = createClient();
       const recurringArgs = {
         target_barbershop_id: remoteTenantId.current,
@@ -486,7 +541,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         error = legacyResult.error;
       }
       if (error) {
-        const rawMessage = `${error.message ?? ""} ${error.details ?? ""}`;
+        const rawMessage = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`;
         if (rawMessage.includes("lunch_conflict")) {
           const conflictDate = rawMessage.split("lunch_conflict:")[1]?.trim();
           return { ok: false, message: `Esse horário cruza a pausa para almoço do barbeiro${conflictDate ? ` (${conflictDate})` : ""}.`, requiresConfirmation: true, conflictKind: "lunch" };
@@ -495,9 +550,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           return { ok: false, message: rawMessage.replace(/^.*recurrence_conflict:\s*/, "Conflito encontrado em ") || "Existe um horário ocupado dentro do período escolhido.", conflictKind: "appointment" };
         }
         if (rawMessage.includes("schedule_conflict") || error.code === "23514") {
+          if (input.allowScheduleConflict && localScheduleConflict?.kind === "lunch") return { ok: false, message: "A confirmação foi recebida, mas o banco de produção ainda não está com a regra de pausa atualizada. Nenhum horário foi criado. Atualize a migração do Supabase e tente novamente.", conflictKind: "lunch" };
           return { ok: false, message: "Esse horário fica fora do funcionamento do barbeiro. Confira a data, o horário e a pausa para almoço.", conflictKind: "schedule" };
         }
-        return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente." };
+        if (rawMessage.includes("service, barber, or barbershop unavailable")) return { ok: false, message: "O serviço escolhido não está liberado para esse barbeiro ou o barbeiro está inativo." };
+        if (rawMessage.includes("client unavailable")) return { ok: false, message: "O cliente selecionado está inativo ou não pertence a esta barbearia." };
+        if (rawMessage.includes("barber unavailable")) return { ok: false, message: "O barbeiro selecionado está inativo. Escolha outro profissional." };
+        if (rawMessage.includes("no recurrence dates matched")) return { ok: false, message: "Nenhuma data da recorrência coincide com os dias selecionados. Confira a data inicial e os dias da semana." };
+        if (rawMessage.includes("not authorized") || error.code === "42501") return { ok: false, message: "Seu perfil não tem permissão para criar uma agenda recorrente." };
+        if (rawMessage.includes("function") && (rawMessage.includes("does not exist") || rawMessage.includes("could not find")) || error.code === "PGRST202") return { ok: false, message: "A rotina de agenda recorrente ainda não foi atualizada no banco de produção. Nenhum horário foi criado." };
+        if (rawMessage.toLowerCase().includes("duplicate") || rawMessage.toLowerCase().includes("exclusion") || error.code === "23P01") return { ok: false, message: "Já existe um atendimento conflitante para esse barbeiro ou cliente dentro do período escolhido." , conflictKind: "appointment" };
+        return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente. Confira o barbeiro, o cliente, o serviço, a data e o horário." };
       }
       const createdCount = Number(data?.created_count ?? 0);
       const recurrenceId = String(data?.series_id ?? "");
