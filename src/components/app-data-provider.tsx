@@ -542,6 +542,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
       if (error) {
         const rawMessage = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`;
+        const lowerRawMessage = rawMessage.toLowerCase();
         if (rawMessage.includes("lunch_conflict")) {
           const conflictDate = rawMessage.split("lunch_conflict:")[1]?.trim();
           return { ok: false, message: `Esse horário cruza a pausa para almoço do barbeiro${conflictDate ? ` (${conflictDate})` : ""}.`, requiresConfirmation: true, conflictKind: "lunch" };
@@ -558,8 +559,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (rawMessage.includes("barber unavailable")) return { ok: false, message: "O barbeiro selecionado está inativo. Escolha outro profissional." };
         if (rawMessage.includes("no recurrence dates matched")) return { ok: false, message: "Nenhuma data da recorrência coincide com os dias selecionados. Confira a data inicial e os dias da semana." };
         if (rawMessage.includes("not authorized") || error.code === "42501") return { ok: false, message: "Seu perfil não tem permissão para criar uma agenda recorrente." };
-        if (rawMessage.includes("function") && (rawMessage.includes("does not exist") || rawMessage.includes("could not find")) || error.code === "PGRST202") return { ok: false, message: "A rotina de agenda recorrente ainda não foi atualizada no banco de produção. Nenhum horário foi criado." };
-        if (rawMessage.toLowerCase().includes("duplicate") || rawMessage.toLowerCase().includes("exclusion") || error.code === "23P01") return { ok: false, message: "Já existe um atendimento conflitante para esse barbeiro ou cliente dentro do período escolhido." , conflictKind: "appointment" };
+        if (lowerRawMessage.includes("function") && (lowerRawMessage.includes("does not exist") || lowerRawMessage.includes("could not find")) || error.code === "PGRST202") return { ok: false, message: "A rotina de agenda recorrente ainda não foi atualizada no banco de produção. Nenhum horário foi criado." };
+        if (lowerRawMessage.includes("duplicate") || lowerRawMessage.includes("exclusion") || error.code === "23P01") return { ok: false, message: "Já existe um atendimento conflitante para esse barbeiro ou cliente dentro do período escolhido." , conflictKind: "appointment" };
         return { ok: false, message: error.message?.includes("interval") || error.message?.includes("duration") ? "Confira o intervalo e a duração escolhidos." : "Não foi possível criar a agenda recorrente. Confira o barbeiro, o cliente, o serviço, a data e o horário." };
       }
       const createdCount = Number(data?.created_count ?? 0);
