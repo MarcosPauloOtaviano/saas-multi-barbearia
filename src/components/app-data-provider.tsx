@@ -452,7 +452,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const serviceIds = input.serviceIds.filter(Boolean);
       if (!serviceIds.length) return { ok: false, message: "Selecione pelo menos um serviço." };
       const db = createClient();
-      const { data, error } = await db.rpc("create_recurring_internal_appointments", {
+      const recurringArgs = {
         target_barbershop_id: remoteTenantId.current,
         selected_service_ids: serviceIds,
         selected_barber_id: input.barberId,
@@ -464,7 +464,27 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         selected_weekdays: input.weekdays,
         appointment_notes: null,
         allow_schedule_conflict: Boolean(input.allowScheduleConflict),
-      });
+      };
+      let { data, error } = await db.rpc("create_recurring_internal_appointments", recurringArgs);
+      // Keep recurring bookings working while a deployment has the new SQL
+      // migration waiting to be applied. Once the new overload exists, this
+      // branch is never reached and the explicit lunch confirmation is used.
+      if (error && (error.code === "PGRST202" || error.code === "42883")) {
+        const legacyResult = await db.rpc("create_recurring_internal_appointments", {
+          target_barbershop_id: remoteTenantId.current,
+          selected_service_ids: serviceIds,
+          selected_barber_id: input.barberId,
+          selected_client_id: input.clientId,
+          first_date: input.firstDate,
+          local_time: `${input.time}:00`,
+          interval_days: input.intervalDays,
+          duration_months: input.durationMonths,
+          selected_weekdays: input.weekdays,
+          appointment_notes: null,
+        });
+        data = legacyResult.data;
+        error = legacyResult.error;
+      }
       if (error) {
         const rawMessage = `${error.message ?? ""} ${error.details ?? ""}`;
         if (rawMessage.includes("lunch_conflict")) {
