@@ -135,7 +135,7 @@ create function public.create_recurring_internal_appointments(
 )
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $$
 declare

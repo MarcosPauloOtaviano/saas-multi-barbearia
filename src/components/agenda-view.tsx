@@ -38,10 +38,10 @@ export function AgendaView() {
   const [recurrenceDuration, setRecurrenceDuration] = useState("3");
   const [recurringConflict, setRecurringConflict] = useState<string | null>(null);
   const [allowRecurringScheduleConflict, setAllowRecurringScheduleConflict] = useState(false);
-  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>(() => {
-    const day = new Date(`${todayIso}T12:00:00Z`).getUTCDay();
-    return [day];
-  });
+  // Leave the weekday filter empty by default. With no selected day the
+  // cadence starts on the chosen date; this avoids silently adding today's
+  // weekday when the team only wants, for example, every Saturday.
+  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>([]);
   const [nowMs, setNowMs] = useState(0);
   const selectedId = searchParams.get("appointment");
   const selected = appointments.find((item) => item.id === selectedId);
