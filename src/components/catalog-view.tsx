@@ -63,7 +63,7 @@ export function CatalogView({ kind }: { kind: "service" | "product" }) {
     finally { pending.current = false; setBusy(false); }
   }
   return <>
-    <PageTitle eyebrow="Catálogo" title={isService ? "Serviços" : "Produtos"} description={isService ? "O que seus clientes podem agendar." : "Produtos e preços da barbearia."} action={<button className="button primary" onClick={() => open()}><Plus size={18} />Novo {singular}</button>} />
+    <PageTitle eyebrow="Catálogo" title={isService ? "Serviços" : "Produtos"} description={isService ? "O que seus clientes podem agendar." : "Produtos e preços do espaço."} action={<button className="button primary" onClick={() => open()}><Plus size={18} />Novo {singular}</button>} />
     {feedback && !editing && <p role="status" className={`form-feedback ${feedback.ok ? "success" : "error"}`}>{feedback.message}</p>}
     {items.length ? <div className="services-grid">{items.map(item => <article className={`service-card ${!item.active ? "is-inactive" : ""}`} key={item.id}>
       <div className="service-card__head"><h2>{item.name}</h2><div className="service-card-actions"><button className="icon-button" onClick={() => open(item)} aria-label={`Editar ${item.name}`}><Pencil size={18} /></button>{!isService && !item.active && <button className="icon-button danger-action" disabled={busy} onClick={() => void remove(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={18} /></button>}</div></div>

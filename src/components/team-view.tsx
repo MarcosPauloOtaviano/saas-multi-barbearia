@@ -48,7 +48,7 @@ export function TeamView() {
     setBusy(true); setFeedback(null);
     try { setFeedback(await deleteBarber(id)); } catch { setFeedback({ok:false,message:"Não foi possível excluir o perfil."}); } finally { setBusy(false); }
   }
-  return <><PageTitle eyebrow="Barbearia" title="Equipe" description="Profissionais, fotos e acesso à agenda." action={<button className="button primary" onClick={()=>open("professional")}><Plus size={18}/>Cadastrar profissional</button>}/>
+  return <><PageTitle eyebrow="Espaço" title="Equipe" description="Profissionais, fotos e acesso à agenda." action={<button className="button primary" onClick={()=>open("professional")}><Plus size={18}/>Cadastrar profissional</button>}/>
     {feedback&&!modal&&<p role="status" className={`form-feedback ${feedback.ok?"success":"error"}`}>{feedback.message}</p>}
     <div className="team-grid">{barbers.map(barber=>{
       const member=teamMembers.find(m=>m.barberId===barber.id);

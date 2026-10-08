@@ -15,16 +15,16 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
   const activeBarbers = barbers.filter((barber) => barber.active);
   const bookingHref = `/b/${slug}/agendar`;
   const servicesHref = `/b/${slug}/servicos`;
-  const name = shop?.name ?? shopName ?? "Sua barbearia";
+  const name = shop?.name ?? shopName ?? "Seu espaço";
   const mapHref = shop?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}` : null;
   const heroRef = useRef<HTMLElement>(null);
   const [sceneProgress, setSceneProgress] = useState(0);
   const scenes = [
-    { image: "/images/barberflow-scene-00-aerea.png", mobileImage: "/images/barberflow-scene-00-aerea-mobile.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-01-aproximacao.png", mobileImage: "/images/barberflow-scene-01-aproximacao-mobile.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-03-porta.png", mobileImage: "/images/barberflow-scene-03-porta-mobile.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-02-semi-realista.png", mobileImage: "/images/barberflow-scene-02-mobile.png", focus: "52% center" },
-    { image: "/images/barberflow-scene-03-semi-realista.png", mobileImage: "/images/barberflow-scene-03-mobile.png", focus: "78% center" },
+    { image: "/images/barberflow-unisex-scene-00-aerea.webp", mobileImage: "/images/barberflow-unisex-scene-00-aerea-mobile.webp", focus: "62% center" },
+    { image: "/images/barberflow-unisex-scene-01-aproximacao.webp", mobileImage: "/images/barberflow-unisex-scene-01-aproximacao-mobile.webp", focus: "64% center" },
+    { image: "/images/barberflow-unisex-scene-02-entrada.webp", mobileImage: "/images/barberflow-unisex-scene-02-entrada-mobile.webp", focus: "58% center" },
+    { image: "/images/barberflow-unisex-scene-03-estudio.webp", mobileImage: "/images/barberflow-unisex-scene-03-estudio-mobile.webp", focus: "50% center" },
+    { image: "/images/barberflow-unisex-scene-04-final.webp", mobileImage: "/images/barberflow-unisex-scene-04-final-mobile.webp", focus: "64% center" },
   ];
   const sceneIndex = Math.min(scenes.length - 1, Math.floor(sceneProgress * scenes.length));
 
@@ -62,7 +62,7 @@ export function CustomerHome({ slug, shop, shopName, services, barbers }: { slug
         <div className="cinematic-hero__grain" />
         <div className="cinematic-hero__copy">
           <p className="cinematic-kicker"><span /> {name} · Agendamento oficial</p>
-          <h1 id="customer-professional-title">Seu próximo corte<br /><em>começa aqui.</em></h1>
+          <h1 id="customer-professional-title">Seu próximo atendimento<br /><em>começa aqui.</em></h1>
           <p className="cinematic-hero__lead">Escolha o serviço, o profissional e um horário disponível. Sem cadastro obrigatório e com confirmação segura.</p>
           <div className="cinematic-hero__actions"><Link className="button cinematic-button" href={bookingHref}><span>Agendar meu horário</span><ArrowRight /></Link><Link className="cinematic-login" href={servicesHref}>Ver serviços <ArrowRight /></Link></div>
         </div>

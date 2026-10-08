@@ -16,7 +16,7 @@ export function CustomerShell({ children, tenant = null, showNavigation = Boolea
   const homeHref = slug ? `/b/${slug}` : "/";
   const accountHref = "/conta";
   const brandName = tenant?.name ?? "BarberFlow";
-  const brandCaption = tenant ? "Agendamento oficial" : "Agenda para barbearias";
+  const brandCaption = tenant ? "Agendamento oficial" : "Agenda para o seu espaço";
   const isHome = Boolean(slug && pathname === homeHref);
   return <main className="customer-app">
     <header className={`customer-header${isHome ? " customer-header--home" : ""}`}>

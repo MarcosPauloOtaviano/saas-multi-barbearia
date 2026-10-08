@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BarberFlow — Agendamento de barbearias",
-  description: "Agende seu corte, acompanhe seus horários e cuide do seu estilo pelo celular.",
+  title: "BarberFlow — Agenda para espaços de beleza",
+  description: "Agende seu atendimento, acompanhe seus horários e cuide do seu espaço pelo celular.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/favicon.svg", apple: "/apple-touch-icon.png" },
 };

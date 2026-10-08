@@ -47,7 +47,7 @@ export function ProfileView() {
   return <><PageTitle eyebrow="Sua conta" title="Meu perfil" description={currentUserName} />
     <section className="content-card operating-card">
       {barber && <div className="profile-photo-row"><BarberAvatar barber={barber} className="team-avatar" /><div className="profile-photo-actions"><label className="button secondary photo-label"><Camera size={18} />{busy ? "Aguarde…" : "Alterar minha foto"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label="Alterar minha foto" onChange={e => {void photo(e.target.files?.[0]);e.target.value="";}} /></label>{barber.avatarUrl && <button type="button" className="button danger photo-remove" disabled={busy} onClick={() => void removePhoto()}><Trash2 size={17} />Remover foto</button>}</div></div>}
-      <p className="table-hint">{role === "owner" ? "Proprietário: gestão da barbearia e atendimentos." : role === "barber" ? "Barbeiro: sua agenda e seu perfil, sem acesso à administração." : "Acesso individual à barbearia."}</p>
+      <p className="table-hint">{role === "owner" ? "Proprietário: gestão do espaço e atendimentos." : role === "barber" ? "Profissional: sua agenda e seu perfil, sem acesso à administração." : "Acesso individual ao espaço."}</p>
       <h2>Alterar senha</h2><form onSubmit={password} className="form-grid">
         <label className="field full"><span>Senha atual</span><input name="currentPassword" type="password" autoComplete="current-password" required /></label>
         <label className="field full"><span>Nova senha</span><input name="newPassword" type="password" autoComplete="new-password" minLength={10} required /><small>No mínimo 10 caracteres.</small></label>

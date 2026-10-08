@@ -97,7 +97,7 @@ export function AgendaView() {
   function whatsappMessage() {
     if (!selected) return "";
     const dateLabel = selected.date.split("-").reverse().join("/");
-    const establishment = shopName || "barbearia";
+    const establishment = shopName || "espaço";
     if (whatsappTemplate === "lembrete") return `Olá, ${selected.clientName}! Aqui é da ${establishment}. Lembrando do seu atendimento de ${selected.serviceName} com ${selected.barberName} no dia ${dateLabel} às ${selected.time}. Se precisar alterar, responda por aqui.`;
     if (whatsappTemplate === "imprevisto") return `Olá, ${selected.clientName}! Aqui é da ${establishment}. Precisamos falar sobre seu atendimento de ${selected.serviceName} no dia ${dateLabel} às ${selected.time}. Quando puder, responda por aqui.`;
     return `Olá, ${selected.clientName}! Aqui é da ${establishment}. Recebemos sua solicitação de ${selected.serviceName} para o dia ${dateLabel} às ${selected.time} com ${selected.barberName}. Posso confirmar esse horário?`;

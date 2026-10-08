@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Scissors } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Heart, Scissors, Sparkles, Store } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const whatsappHref = `https://wa.me/5535988440656?text=${encodeURIComponent("Olá! Quero conhecer o BarberFlow e cadastrar meu estabelecimento.")}`;
@@ -14,6 +14,13 @@ const scenes = [
   { image: "/images/barberflow-unisex-scene-03-estudio.webp", mobileImage: "/images/barberflow-unisex-scene-03-estudio-mobile.webp", focus: "50% center" },
   { image: "/images/barberflow-unisex-scene-04-final.webp", mobileImage: "/images/barberflow-unisex-scene-04-final-mobile.webp", focus: "64% center" },
 ];
+
+const businessTypes = [
+  { title: "Barbearia", description: "Cortes, barba e uma agenda que acompanha o ritmo da equipe.", icon: Scissors, tone: "copper" },
+  { title: "Salão de beleza", description: "Cabelos, unhas, estética e todos os serviços no mesmo link.", icon: Sparkles, tone: "rose" },
+  { title: "Estúdio de beleza", description: "Uma experiência autoral para profissionais e clientes.", icon: Store, tone: "sage" },
+  { title: "Unissex", description: "Um espaço completo, acolhedor e feito para todos os públicos.", icon: Heart, tone: "sand" },
+] as const;
 
 export function PlatformHome() {
   const heroRef = useRef<HTMLElement>(null);
@@ -74,8 +81,13 @@ export function PlatformHome() {
         </div>
 
         <div className="cinematic-progress" aria-label={`Progresso da apresentação: cena ${sceneIndex + 1} de ${scenes.length}`}><span style={{ transform: `scaleX(${Math.max(0.04, sceneProgress)})` }} /></div>
-        <a className="cinematic-scroll" href="#contato" aria-label="Rolar para ver contato"><span>Deslize para entrar</span><i /></a>
+        <a className="cinematic-scroll" href="#tipos-de-espaco" aria-label="Rolar para conhecer os tipos de espaço"><span>Deslize para entrar</span><i /></a>
       </div>
+    </section>
+
+    <section className="platform-types" id="tipos-de-espaco" aria-labelledby="platform-types-title">
+      <div className="platform-types__heading"><p className="eyebrow">Para cada espaço</p><h2 id="platform-types-title">A mesma agenda. O seu jeito de atender.</h2><p>Escolha a identidade do seu negócio e deixe o BarberFlow organizar o resto.</p></div>
+      <div className="platform-types__grid">{businessTypes.map(({ title, description, icon: Icon, tone }) => <article className={`platform-type-card platform-type-card--${tone}`} key={title}><span className="platform-type-card__icon"><Icon /></span><div><strong>{title}</strong><p>{description}</p></div><ArrowUpRight className="platform-type-card__arrow" /></article>)}</div>
     </section>
 
     <section className="platform-contact-cta" id="contato">
@@ -83,6 +95,6 @@ export function PlatformHome() {
       <a className="button cinematic-button" href={whatsappHref} target="_blank" rel="noreferrer">Falar no WhatsApp <ArrowUpRight /></a>
     </section>
 
-    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agenda para barbearias e salões.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Política de privacidade</Link><Link href="/termos">Termos de uso</Link></div></footer>
+    <footer className="platform-footer"><div><span className="platform-wordmark"><span><Scissors /></span><strong>BarberFlow</strong></span><small>Agenda para espaços de beleza.</small></div><div className="platform-footer__links"><Link href="/admin">Acessar painel</Link><Link href="/privacidade">Política de privacidade</Link><Link href="/termos">Termos de uso</Link></div></footer>
   </main>;
 }
