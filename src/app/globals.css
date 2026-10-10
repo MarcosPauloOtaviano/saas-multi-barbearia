@@ -513,7 +513,7 @@ a { color: inherit; }
   .booking-page::before { height: 390px; background-position: 58% center; }
   .booking-header { padding-top: 18px; }
   .booking-intro { margin-top: 68px; }
-  .booking-card { margin-top: 22px; padding: 21px 17px; }.barber-options { grid-template-columns: 1fr; }.time-options { grid-template-columns: repeat(3, 1fr); }.booking-progress small { display: none; }.success-ticket { grid-template-columns: 1fr; }.booking-header > div { display: none; }
+  .booking-card { margin-top: 22px; padding: 21px 17px; }.barber-options { grid-template-columns: 1fr; }.time-options { grid-template-columns: repeat(3, 1fr); }.booking-progress small { display: none; }.success-ticket { grid-template-columns: 1fr; }.booking-header > div:last-child { display: none; }
   .login-page { grid-template-columns: 1fr; }.login-brand-panel { display: none; }.login-form-panel { padding: 28px 22px; }.mobile-login-brand { display: flex; }
 }
 
