@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
-import { BarChart3, Bell, CalendarDays, ChevronDown, CircleDollarSign, ExternalLink, House, LogOut, Scissors, Settings, UserRoundCog, UsersRound, Menu, X, Package, Clock, UserRound } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft, BarChart3, Bell, CalendarDays, ChevronDown, CircleDollarSign, ExternalLink, House, LogOut, Scissors, Settings, UserRoundCog, UsersRound, Menu, X, Package, Clock, UserRound } from "lucide-react";
 import { useAppData } from "@/components/app-data-provider";
 import { signOut } from "@/app/auth/actions";
 import type { MemberRole } from "@/lib/types";
@@ -43,6 +43,7 @@ const roleLabels: Record<MemberRole, string> = { owner: "Proprietário", manager
 
 export function AppShell({ children, slug }: { children: React.ReactNode; slug: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const base = `/admin/${slug}`;
   const { notifications, role, currentUserName, shopName, loading, loadError } = useAppData();
@@ -53,6 +54,11 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
   const userInitials = initials(currentUserName);
   const todayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   const logoutAction = signOut.bind(null, slug);
+  const canGoBack = pathname !== base;
+  function goBack() {
+    if (window.history.length > 1) router.back();
+    else router.push(base);
+  }
 
   if (loading) return <main className="auth-shell"><p role="status">Carregando sua barbearia…</p></main>;
 
@@ -64,7 +70,7 @@ export function AppShell({ children, slug }: { children: React.ReactNode; slug: 
     </aside>
 
     <section className="workspace app-workspace">
-      <header className="topbar app-topbar"><Link className="mobile-wordmark" href={base}><span className="mobile-wordmark__mark"><Scissors size={19} /></span><span className="mobile-wordmark__copy"><strong>{shopName}</strong><small>Painel da equipe</small></span></Link><div className="topbar-date"><p className="eyebrow">{todayLabel}</p><span>{shopName}</span></div><div className="topbar-actions"><Link className="customer-preview-link" href={`/b/${slug}`} aria-label="Abrir página pública" title="Abrir página pública"><ExternalLink size={17} /><span>Página pública</span></Link><Link className="notification-button" href={`${base}/notificacoes`} aria-label={`${unread} novas notificações`}><Bell size={20} />{unread > 0 && <span>{unread}</span>}</Link><details className="profile-menu header-profile"><summary><span className="header-avatar">{userInitials}</span><span className="header-user">{currentUserName}<small>{roleLabels[role]}</small></span><ChevronDown size={16} /></summary><div className="profile-popover"><strong>{currentUserName}</strong><span>{roleLabels[role]}</span>{(role === "owner" || role === "manager") && <Link href={`${base}/configuracoes`}><Settings size={16} /> Configurações</Link>}<form action={logoutAction}><button type="submit"><LogOut size={16} /> Sair</button></form></div></details></div></header>
+      <header className="topbar app-topbar"><div className="app-topbar__leading">{canGoBack && <button type="button" className="back-button" onClick={goBack} aria-label="Voltar"><ArrowLeft size={19} /></button>}<Link className="mobile-wordmark" href={base}><span className="mobile-wordmark__mark"><Scissors size={19} /></span><span className="mobile-wordmark__copy"><strong>{shopName}</strong><small>Painel da equipe</small></span></Link></div><div className="topbar-date"><p className="eyebrow">{todayLabel}</p><span>{shopName}</span></div><div className="topbar-actions"><Link className="customer-preview-link" href={`/b/${slug}`} aria-label="Abrir página pública" title="Abrir página pública"><ExternalLink size={17} /><span>Página pública</span></Link><Link className="notification-button" href={`${base}/notificacoes`} aria-label={`${unread} novas notificações`}><Bell size={20} />{unread > 0 && <span>{unread}</span>}</Link><details className="profile-menu header-profile"><summary><span className="header-avatar">{userInitials}</span><span className="header-user">{currentUserName}<small>{roleLabels[role]}</small></span><ChevronDown size={16} /></summary><div className="profile-popover"><strong>{currentUserName}</strong><span>{roleLabels[role]}</span>{(role === "owner" || role === "manager") && <Link href={`${base}/configuracoes`}><Settings size={16} /> Configurações</Link>}<form action={logoutAction}><button type="submit"><LogOut size={16} /> Sair</button></form></div></details></div></header>
       {loadError && <div className="connection-banner" role="status"><span>{loadError}</span><button className="text-button" onClick={() => window.location.reload()}>Tentar agora</button></div>}
       {routeAllowed ? children : <section className="content-card access-card"><UserRoundCog /><div><p className="eyebrow">Acesso protegido</p><h1>Esta área não faz parte do seu perfil</h1><p>O perfil de {roleLabels[role].toLowerCase()} vê somente as funções necessárias para o trabalho.</p><Link className="button primary" href={`${base}/agenda`}>Abrir minha agenda</Link></div></section>}
     </section>

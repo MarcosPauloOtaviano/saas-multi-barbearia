@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Scissors, Sparkles, UserRound } from "lucide-react";
+import { ArrowLeft, House, Scissors, Sparkles, UserRound } from "lucide-react";
 
 type CustomerShellProps = {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export function CustomerShell({ children, tenant = null, showNavigation = Boolea
   const isHome = Boolean(slug && pathname === homeHref);
   return <main className="customer-app">
     <header className={`customer-header${isHome ? " customer-header--home" : ""}`}>
-      <Link className="customer-brand" href={homeHref}><span><Scissors /></span><div><strong>{brandName}</strong><small>{brandCaption}</small></div></Link>
+      <div className="customer-header__leading">{!isHome && <Link className="customer-back-button" href={homeHref} aria-label="Voltar para o início"><ArrowLeft size={18} /></Link>}<Link className="customer-brand" href={homeHref}><span><Scissors /></span><div><strong>{brandName}</strong><small>{brandCaption}</small></div></Link></div>
       {!isHome && <Link className="customer-avatar" href={accountHref} aria-label="Minha conta"><UserRound size={18} /></Link>}
     </header>
     <div className="customer-content">{children}</div>
